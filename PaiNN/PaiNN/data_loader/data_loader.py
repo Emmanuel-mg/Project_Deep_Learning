@@ -80,10 +80,3 @@ class PaiNNDataLoader(DataLoader):
             return None
         else: 
             return DataLoader(self.dataset, sampler=self.test_sampler, collate_fn=self.collate_fn, **self.init_kwargs)
-
-if __name__=="__main__":
-    train_dataset = PaiNNDataLoader()
-    batch = next(iter(train_dataset))
-    X, y = batch[0]
-    print(X.shape)
-    print(X)
