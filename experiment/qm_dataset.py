@@ -4,9 +4,9 @@ from torch_geometric.datasets import QM9
 import seaborn as sns
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
-dataset = QM9(root="data")
+dataset = QM9(root="../PaiNN/PaiNN/data")
 
-print(dataset)
+print(dataset[0].keys())
 print("number of graphs:\t\t",len(dataset))
 print("number of classes:\t\t",dataset.num_classes)
 print("number of node features:\t",dataset.num_node_features)
