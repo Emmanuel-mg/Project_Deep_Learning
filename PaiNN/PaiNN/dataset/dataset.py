@@ -12,7 +12,7 @@ class PaiNNDataset(Dataset):
         Args:
             path: file path for the dataset
         """
-        self.data = QM9(root = path)
+        self.data = QM9(root = path)[:10]
         self.r_cut = r_cut
         self.self_edge = self_edge
 
@@ -41,6 +41,7 @@ class PaiNNDataset(Dataset):
         """ Return the sample corresponding to idx """
         # Add the adjacency matrix
         edges = self.add_edges(self.data[idx]['pos'])
-    
+        mol = self.data[idx].clone().detach()
+
         # The last N columns (where N is the number of columns) will be the adjacency matrix    
-        return torch.cat([self.data[idx]['z'].unsqueeze(dim=1), self.data[idx]['pos'], edges], dim=1), self.data[idx]['y']
+        return {'Z': mol['z'], 'pos': mol['pos'], 'edges': edges, 'targets': mol['y'], 'id': torch.tensor([mol['idx'].item()] * edges.shape[0])}
