@@ -8,7 +8,7 @@ import numpy as np
 class PaiNNDataLoader(DataLoader):
     """ PaiNNDataLoader to load PaiNN training data """
 
-    def __init__(self, data_path: str = "../data", batch_size: int = 32, r_cut: float = 1., self_edge: bool = False, test_split: float = 0.1, validation_split: float = 0.2, nworkers: int = 2):
+    def __init__(self, data_path: str = "../data", batch_size: int = 32, r_cut: float = 2., self_edge: bool = False, test_split: float = 0.1, validation_split: float = 0.2, nworkers: int = 2):
         """ Constructor
         Args:
             train_path: path to the training dataset
@@ -44,8 +44,16 @@ class PaiNNDataLoader(DataLoader):
     # ie. you cannot use torch.stack on it
     def collate_fn(self, data):
         batch_dict = {k: [dic[k] for dic in data] for k in data[0].keys()} 
-        
-        return {'Z': torch.cat(batch_dict['Z']), 'pos': torch.cat(batch_dict['pos']), 'graph': torch.block_diag(*batch_dict['edges']), 'graph_idx': torch.cat(batch_dict['id']), 'targets': torch.cat(batch_dict['targets'])}
+
+        id = []
+        edges_coord = []
+        delta = 0
+        for i, mol in enumerate(data):
+            id += [i] * mol["n_atom"]
+            edges_coord += [[x + delta, y + delta] for x,y in  mol["coord_edges"]]
+            delta = mol["n_atom"]
+
+        return {'z': torch.cat(batch_dict['z']), 'pos': torch.cat(batch_dict['pos']), 'graph': torch.tensor(edges_coord), 'graph_idx': torch.tensor(id), 'targets': torch.cat(batch_dict['targets'])}
 
     def _split(self, validation_split: float):
         """ Creates a sampler to extract training and validation data
