@@ -43,13 +43,17 @@ class PaiNNDataLoader(DataLoader):
     # We need to define our custom collate_fn because our samples (molecule) have different size
     # ie. you cannot use torch.stack on it
     def collate_fn(self, data):
+        # Each mol is a dic with "z" = n_atoms here we get a dic with "z" = (n_mol, n_atoms_mol)
         batch_dict = {k: [dic[k] for dic in data] for k in data[0].keys()} 
 
+        # We need to define the id and the edges_coord differently (because we begin indexing from 0)
         id = []
         edges_coord = []
         delta = 0
         for i, mol in enumerate(data):
+            # Unique ID per batch (beginning from 0)
             id += [i] * mol["n_atom"]
+            # Adding the size of the molecule before in order to keep the indexes true in the final A matrix
             edges_coord += [[x + delta, y + delta] for x,y in  mol["coord_edges"]]
             delta = mol["n_atom"]
 
