@@ -1,3 +1,6 @@
+import torch
+import numpy as np
+
 from PaiNN.data_loader import PaiNNDataLoader
 
 train_set = PaiNNDataLoader(batch_size=2)

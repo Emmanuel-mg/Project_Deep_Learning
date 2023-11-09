@@ -1,9 +1,9 @@
-from cgi import test
-from torch.utils.data import DataLoader
-from torch.utils.data.sampler import SubsetRandomSampler
-from PaiNN.dataset import PaiNNDataset
 import torch
 import numpy as np
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SubsetRandomSampler
+
+from PaiNN.dataset import PaiNNDataset
 
 class PaiNNDataLoader(DataLoader):
     """ PaiNNDataLoader to load PaiNN training data """

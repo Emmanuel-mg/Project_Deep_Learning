@@ -1,8 +1,7 @@
 import torch
+import math
 from torch.utils.data import Dataset
 from torch_geometric.datasets import QM9
-from tqdm import tqdm
-import math
 
 class PaiNNDataset(Dataset):
     """ Class for dataset from QM9 data folder """
