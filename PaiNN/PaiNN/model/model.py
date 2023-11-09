@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 import numpy
 
-from PROT.utils import rbf
+from PaiNN.utils import rbf, cos_cut
 
 class PaiNNModel(nn.Module):
     """ PaiNN model architecture """
 
-    def __init__(self, hidden_state_size):
+    def __init__(self, hidden_state_size: int = 128):
         """ Constructor
         Args:
             hidden_state_size: size of the embedding features
@@ -25,11 +25,13 @@ class PaiNNModel(nn.Module):
             nn.Linear(128, 384)
         )
 
-
-
     def forward(self, input):
         """ Forward pass logic 
         Args:
             input: dictionnary coming from data_loader
         """
-        raise NotImplementedError
+        embedding = self.embedding_layer(input['z'])
+
+        atomwise = self.atomwise_layers(embedding)
+
+        return atomwise

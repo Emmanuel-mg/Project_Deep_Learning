@@ -43,21 +43,25 @@ class PaiNNDataLoader(DataLoader):
     # We need to define our custom collate_fn because our samples (molecule) have different size
     # ie. you cannot use torch.stack on it
     def collate_fn(self, data):
+        """ Handle how we stack a batch
+        Args:
+            data: the data before we output the batch (a tuple containing the dictionary for each molecule)
+        """
         # Each mol is a dic with "z" = n_atoms here we get a dic with "z" = (n_mol, n_atoms_mol)
         batch_dict = {k: [dic[k] for dic in data] for k in data[0].keys()} 
 
         # We need to define the id and the edges_coord differently (because we begin indexing from 0)
-        id = []
-        edges_coord = []
-        delta = 0
-        for i, mol in enumerate(data):
-            # Unique ID per batch (beginning from 0)
-            id += [i] * mol["n_atom"]
-            # Adding the size of the molecule before in order to keep the indexes true in the final A matrix
-            edges_coord += [[x + delta, y + delta] for x,y in  mol["coord_edges"]]
-            delta = mol["n_atom"]
+        n_atoms = torch.tensor(batch_dict["n_atom"])
+        
+        # Converting the n_atom into unique id
+        id = torch.repeat_interleave(torch.tensor(range(len(batch_dict["n_atom"]))), n_atoms)
+        # Adding the offset to the neighbours coordinate
+        edges_coord = torch.cumsum(torch.cat((torch.tensor([0]), n_atoms[:-1])), dim=0)
+        neighbours = torch.tensor([local_neigh.shape[0] for local_neigh in batch_dict["coord_edges"]])
+        edges_coord = torch.cat([torch.repeat_interleave(edges_coord, neighbours).unsqueeze(dim=1), torch.repeat_interleave(edges_coord, neighbours).unsqueeze(dim=1)], dim=1)
+        edges_coord += torch.cat(batch_dict["coord_edges"])
 
-        return {'z': torch.cat(batch_dict['z']), 'pos': torch.cat(batch_dict['pos']), 'graph': torch.tensor(edges_coord), 'graph_idx': torch.tensor(id), 'targets': torch.cat(batch_dict['targets'])}
+        return {'z': torch.cat(batch_dict['z']), 'pos': torch.cat(batch_dict['pos']), 'graph': edges_coord, 'graph_idx': id, 'targets': torch.cat(batch_dict['targets'])}
 
     def _split(self, validation_split: float):
         """ Creates a sampler to extract training and validation data
