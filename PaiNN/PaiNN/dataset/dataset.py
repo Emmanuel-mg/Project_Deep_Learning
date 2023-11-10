@@ -15,7 +15,7 @@ class PaiNNDataset(Dataset):
         self.r_cut = r_cut
         self.self_edge = self_edge
 
-    def add_edges(self, pos) -> torch.Tensor:
+    def add_edges(self, pos) -> (torch.Tensor, torch.Tensor):
         """ Return the edges between the atoms based on r_cut (adjacency matrix) """
         n_atoms = pos.shape[0]
 
