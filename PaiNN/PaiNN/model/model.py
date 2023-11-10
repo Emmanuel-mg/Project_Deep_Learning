@@ -34,9 +34,7 @@ class PaiNNModel(nn.Module):
         embedding = self.embedding_layer(input['z'])
         atomwise = self.atomwise_layers(embedding)
         edges_dist = input['edges_dist']
-
-        print(edges_dist)
-        print(input['graph'])
+        orientation = input['orientation']
 
         return atomwise
     
