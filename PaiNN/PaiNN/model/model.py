@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy
 
+from PaiNN.data_loader import PaiNNDataLoader
 from PaiNN.utils import rbf, cos_cut
 
 class PaiNNModel(nn.Module):
@@ -35,3 +36,14 @@ class PaiNNModel(nn.Module):
         atomwise = self.atomwise_layers(embedding)
 
         return atomwise
+    
+
+
+if __name__=="__main__":
+    train_set = PaiNNDataLoader(batch_size=2)
+    model = PaiNNModel()
+    val_set = train_set.get_val()
+    test_set = train_set.get_test()
+    for i, batch in enumerate(train_set):
+        print(batch.keys())
+        model(batch)
