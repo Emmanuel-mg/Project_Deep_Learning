@@ -32,8 +32,11 @@ class PaiNNModel(nn.Module):
             input: dictionnary coming from data_loader
         """
         embedding = self.embedding_layer(input['z'])
-
         atomwise = self.atomwise_layers(embedding)
+        edges_dist = input['edges_dist']
+
+        print(edges_dist)
+        print(input['graph'])
 
         return atomwise
     
@@ -45,5 +48,4 @@ if __name__=="__main__":
     val_set = train_set.get_val()
     test_set = train_set.get_test()
     for i, batch in enumerate(train_set):
-        print(batch.keys())
         model(batch)

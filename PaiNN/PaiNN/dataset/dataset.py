@@ -11,7 +11,7 @@ class PaiNNDataset(Dataset):
         Args:
             path: file path for the dataset
         """
-        self.data = QM9(root = path)
+        self.data = QM9(root = path)[:10]
         self.r_cut = r_cut
         self.self_edge = self_edge
 
@@ -21,16 +21,20 @@ class PaiNNDataset(Dataset):
 
         # Finding each edge and adding the coordinates to the list
         edges_coord = []
+        dist = []
         for i in range(n_atoms):
             for j in range(i + 1):
                 if i==j and self.self_edge:
                     edges_coord.append([i,j])
 
-                if torch.linalg.norm(pos[i] - pos[j]) <= self.r_cut and i!=j:
+                dist_ij = torch.linalg.norm(pos[i] - pos[j])
+                if dist_ij <= self.r_cut and i!=j:
                     edges_coord.append([i,j])
                     edges_coord.append([j,i])
+                    dist.append(dist_ij)
+                    dist.append(dist_ij)    # Same distance ij or ji
 
-        return torch.tensor(edges_coord)
+        return torch.tensor(edges_coord), torch.tensor(dist)
 
     def __len__(self):
         """ Return the length of the dataset """
@@ -39,8 +43,8 @@ class PaiNNDataset(Dataset):
     def __getitem__(self, idx) -> torch.Tensor:
         """ Return the sample corresponding to idx """
         # Add the adjacency matrix
-        edges_coord = self.add_edges(self.data[idx]['pos'])
+        edges_coord, dist = self.add_edges(self.data[idx]['pos'])
         mol = self.data[idx].clone().detach()
 
         # The last N columns (where N is the number of columns) will be the adjacency matrix    
-        return {'z': mol['z'], 'pos': mol['pos'], 'coord_edges': edges_coord, 'targets': mol['y'], 'n_atom':  mol['z'].shape[0]}
+        return {'z': mol['z'], 'pos': mol['pos'], 'coord_edges': edges_coord, 'edges_dist': dist, 'targets': mol['y'], 'n_atom':  mol['z'].shape[0]}

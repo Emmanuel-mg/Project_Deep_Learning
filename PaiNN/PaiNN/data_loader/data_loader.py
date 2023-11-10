@@ -54,14 +54,14 @@ class PaiNNDataLoader(DataLoader):
         n_atoms = torch.tensor(batch_dict["n_atom"])
         
         # Converting the n_atom into unique id
-        id = torch.repeat_interleave(torch.tensor(range(len(batch_dict["n_atom"]))), n_atoms)
+        id = torch.repeat_interleave(torch.tensor(range(len(batch_dict['n_atom']))), n_atoms)
         # Adding the offset to the neighbours coordinate
         edges_coord = torch.cumsum(torch.cat((torch.tensor([0]), n_atoms[:-1])), dim=0)
-        neighbours = torch.tensor([local_neigh.shape[0] for local_neigh in batch_dict["coord_edges"]])
+        neighbours = torch.tensor([local_neigh.shape[0] for local_neigh in batch_dict['coord_edges']])
         edges_coord = torch.cat([torch.repeat_interleave(edges_coord, neighbours).unsqueeze(dim=1), torch.repeat_interleave(edges_coord, neighbours).unsqueeze(dim=1)], dim=1)
-        edges_coord += torch.cat(batch_dict["coord_edges"])
+        edges_coord += torch.cat(batch_dict['coord_edges'])
 
-        return {'z': torch.cat(batch_dict['z']), 'pos': torch.cat(batch_dict['pos']), 'graph': edges_coord, 'graph_idx': id, 'targets': torch.cat(batch_dict['targets'])}
+        return {'z': torch.cat(batch_dict['z']), 'pos': torch.cat(batch_dict['pos']), 'graph': edges_coord, 'edges_dist': torch.cat(batch_dict['edges_dist']), 'graph_idx': id, 'targets': torch.cat(batch_dict['targets'])}
 
     def _split(self, validation_split: float):
         """ Creates a sampler to extract training and validation data

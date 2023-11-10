@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 dataset = QM9(root="../PaiNN/PaiNN/data")
 
-print(dataset[0].keys())
+print(dataset[0]['pos'])
 print("number of graphs:\t\t",len(dataset))
 print("number of classes:\t\t",dataset.num_classes)
 print("number of node features:\t",dataset.num_node_features)
