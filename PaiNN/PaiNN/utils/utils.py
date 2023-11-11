@@ -19,4 +19,4 @@ def cos_cut(inputs: torch.Tensor, r_cut: float):
     """
 
     # We return the cosine cutoff for inputs smaller than the radius cutoff
-    return 0.5 * (1 + torch.cos(torch.pi * inputs / r_cut, device=inputs.device)) * (inputs < r_cut).float()
+    return 0.5 * (1 + torch.cos(torch.pi * inputs / r_cut)) * (inputs < r_cut).float()

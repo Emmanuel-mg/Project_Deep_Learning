@@ -8,23 +8,27 @@ from PaiNN.utils import rbf, cos_cut
 class PaiNNModel(nn.Module):
     """ PaiNN model architecture """
 
-    def __init__(self,  r_cut: float, hidden_state_size: int = 128):
+    def __init__(self, r_cut: float, n_iterations:int = 4, node_size: int = 128, rbf_size: int = 20):
         """ Constructor
         Args:
-            hidden_state_size: size of the embedding features
+            node_size: size of the embedding features
         """
         # Instantiate as a module of PyTorch
         super(PaiNNModel, self).__init__()
 
         # Parameters of the model
         self.r_cut = r_cut
-
+        self.rbf_size = rbf_size
+        num_embedding = 119 # number of all elements in the periodic table
+        self.node_size = node_size
 
         # Embedding layer for our model
-        num_embedding = 119 # number of all elements in the periodic table
-        self.hidden_state_size = hidden_state_size
-        self.embedding_layer = nn.Embedding(num_embedding, self.hidden_state_size)
+        self.embedding_layer = nn.Embedding(num_embedding, self.node_size)
 
+        # Creating the instances for the iterations of message passing and updating
+        self.message_blocks = [Message(node_size=self.node_size, rbf_size=self.rbf_size, r_cut=self.r_cut) for _ in range(n_iterations)] 
+        self.update_blocks = [Update(node_size=self.node_size) for _ in range(n_iterations)]
+    
     def forward(self, input):
         """ Forward pass logic 
         Args:
@@ -32,20 +36,32 @@ class PaiNNModel(nn.Module):
         """
         graph = input['graph']
         edges_dist = input['edges_dist']
-        edges_sense = input['orientation']
+        edges_sense = input['normalized']
+        graph_idx = input['graph_idx']
 
         # Outputs from the atomic numbers
         node_scalars = self.embedding_layer(input['z'])
 
         # Initializing the node vector
-        node_vectors = torch.zeros((graph.shape[0], 3, self.hidden_state_size), 
+        node_vectors = torch.zeros((graph_idx.shape[0], 3, self.node_size), 
                                   device = edges_dist.device, 
-                                  type = edges_dist.type
+                                  dtype = edges_dist.dtype
                                   )
+        
+        for message_block, update_block in zip(self.message_blocks, self.update_blocks):
+            node_scalars, node_vectors = message_block(
+                node_scalars = node_scalars,
+                node_vectors = node_vectors,
+                graph = graph,
+                edges_dist = edges_dist,
+                edges_sense = edges_sense
+            )
+            node_scalars, node_vectors = update_block(
+                node_scalars = node_scalars,
+                node_vectors = node_vectors
+            )
 
-        predict = {}
-
-        return predict
+        return node_scalars, node_vectors
     
 
 class Message(nn.Module):
@@ -57,7 +73,7 @@ class Message(nn.Module):
             rbf_size: number of radial basis functions to use in RBF
             r_cut: radius to cutoff interaction
         """
-        super.__init__()
+        super().__init__()
         # Atomwise layers applied to node scalars
         self.atomwise_layers = nn.Sequential(
             nn.Linear(node_size, node_size),
@@ -86,7 +102,7 @@ class Message(nn.Module):
         # Outputs from edges distances
         filter_rbf = rbf(edges_dist, 
                           r_cut = self.r_cut,
-                          rbf = self.rbf_dim
+                          output_size = self.rbf_dim
                           )
         filter_out = self.expand_layer(filter_rbf)
         cosine_cutoff = cos_cut(edges_dist,
@@ -101,9 +117,9 @@ class Message(nn.Module):
         residual_vectors, residual_scalars, direction_rep = residual.split(128, dim=-1)
 
         # Hadamard product with the neighbours vectors representation
-        residual_vectors = node_vectors[graph[:, 1]] * residual_vectors
+        residual_vectors = node_vectors[graph[:, 1]] * residual_vectors.unsqueeze(dim=1)
         # Hadamard product between the direction representations and the sense of the edges
-        residual_directions = edges_sense * direction_rep
+        residual_directions = edges_sense.unsqueeze(dim=-1) * direction_rep.unsqueeze(dim=1)
         residual_vectors += residual_directions
 
         node_scalars += torch.zeros_like(node_scalars).index_add_(0, graph[:, 0], residual_scalars)
@@ -120,7 +136,7 @@ class Update(nn.Module):
             rbf_size: number of radial basis functions to use in RBF
             r_cut: radius to cutoff interaction
         """
-        super.__init__()
+        super().__init__()
         self.node_size = node_size
 
         # U and V matrices 
@@ -149,16 +165,16 @@ class Update(nn.Module):
         Vv = self.V(node_vectors)
 
         # Stacking V projections and node scalars
-        node_scalars_Vv = torch.stack((node_scalars, torch.linalg.norm(Vv, dim=1)), dim=1)
+        node_scalars_Vv = torch.cat((node_scalars, torch.linalg.norm(Vv, dim=1)), dim=1)
         a = self.atomwise_layers(node_scalars_Vv)
         avv, asv, ass = a.split(self.node_size, dim=-1)
 
         # Scalar product between Uv and Vv
-        scalar_product = torch.sum(Uv * Vv, dim=-1)
+        scalar_product = torch.sum(Uv * Vv, dim=1)
 
         # Calculating the residual values for scalars and vectors
         residual_scalars = ass + asv * scalar_product
-        residual_vectors = avv * (Uv.unsqueeze(dim=1)).expand(-1, 3, -1)
+        residual_vectors = avv.unsqueeze(dim=1) * Uv
 
         # Updating the representations
         node_scalars += residual_scalars
@@ -168,8 +184,9 @@ class Update(nn.Module):
     
 if __name__=="__main__":
     train_set = PaiNNDataLoader(batch_size=2)
-    model = PaiNNModel()
+    model = PaiNNModel(r_cut = getattr(train_set, 'r_cut'))
     val_set = train_set.get_val()
     test_set = train_set.get_test()
     for i, batch in enumerate(train_set):
-        model(batch)
+        node_scalar, node_vector = model(batch)
+        print(node_scalar.shape, node_vector.shape)

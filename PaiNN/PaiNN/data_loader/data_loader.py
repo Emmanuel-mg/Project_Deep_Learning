@@ -19,7 +19,7 @@ class PaiNNDataLoader(DataLoader):
             validation_split: decimal for the split of the validation (on the training dataset)
             nworkers: workers for the dataloader class
         """    
-
+        self.r_cut = r_cut
         self.dataset = PaiNNDataset(path = data_path, r_cut = r_cut, self_edge = self_edge)
         self.length = len(self.dataset)
         self.train_sampler = SubsetRandomSampler(np.array(range(self.length)))
@@ -61,7 +61,7 @@ class PaiNNDataLoader(DataLoader):
         edges_coord = torch.cat([torch.repeat_interleave(edges_coord, neighbours).unsqueeze(dim=1), torch.repeat_interleave(edges_coord, neighbours).unsqueeze(dim=1)], dim=1)
         edges_coord += torch.cat(batch_dict['coord_edges'])
 
-        return {'z': torch.cat(batch_dict['z']), 'pos': torch.cat(batch_dict['pos']), 'graph': edges_coord, 'edges_dist': torch.cat(batch_dict['edges_dist']), 'orientation': torch.cat(batch_dict['orientation']), 'graph_idx': ids, 'targets': torch.cat(batch_dict['targets'])}
+        return {'z': torch.cat(batch_dict['z']), 'pos': torch.cat(batch_dict['pos']), 'graph': edges_coord, 'edges_dist': torch.cat(batch_dict['edges_dist']), 'normalized': torch.cat(batch_dict['normalized']), 'graph_idx': ids, 'targets': torch.cat(batch_dict['targets'])}
 
     def _split(self, validation_split: float):
         """ Creates a sampler to extract training and validation data
