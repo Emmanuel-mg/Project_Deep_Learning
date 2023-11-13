@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 
 from PaiNN.data_loader import PaiNNDataLoader
 from PaiNN.model import PaiNNModel
@@ -90,17 +91,13 @@ class Trainer:
         plot_names = ['Learning curve','Validation loss for every 400 batches', 'Evaluation loss']
 
         for i in range(3):
-            self.summaries_axes[i].plot(p_data[i])
+            self.summaries_axes[i].plot(range(len(p_data[i])), p_data[i])
             self.summaries_axes[i].set_ylabel('Loss')
             self.summaries_axes[i].set_xlabel('Batches')
-            self.summaries_axes[i].set_xlim((0, len(self.train_set)))
+            self.summaries_axes[i].set_xlim((0, len(p_data[i])))
             self.summaries_axes[i].set_title(plot_names[i])
 
-        x_ticks = np.arange(0, len(self.train_set), 400)
-        x_ticks_label = [str(val) for val in x_ticks]
-        self.summaries_axes[1].set_xticks(x_ticks)
-        self.summeries_axes[1].set_xticklabels(x_ticks_label)
-        plt.savefig('Loss_plot', dpi=800)
+        plt.savefig('Loss_plot.png', dpi=800)
         plt.show()
 
 

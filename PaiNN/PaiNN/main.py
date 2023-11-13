@@ -20,6 +20,7 @@ def training():
             device="cpu"
         )
         trainer._train_epoch() 
+        trainer.plot_data()
 
 if __name__=="__main__":
     training()
