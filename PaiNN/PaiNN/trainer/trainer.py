@@ -28,6 +28,11 @@ class Trainer:
         self.valid_set = data_loader.get_val()
         self.test_set = data_loader.get_test()
         self.device = device
+        self.learning_rate = []
+        self.valid_perf= []
+        self.test_perf = []
+        self.summaries, self.summaries_axes = plt.subplots(1,3, figsize=(10,5))
+
 
     def _train_epoch(self) -> dict:
         """ Training logic for an epoch
@@ -42,6 +47,8 @@ class Trainer:
 
             print(f"Current loss {loss} Current batch {batch_idx}")
 
+            self.learning_rate.append(loss.item())
+
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
@@ -50,6 +57,7 @@ class Trainer:
                 val_loss = self._eval_model()
                 print(f"Validation loss for {batch_idx} is {val_loss.item()}")
                 self.scheduler.step(val_loss)
+                self.valid_perf.append(val_loss.item())
 
                 del val_loss
 
@@ -69,8 +77,29 @@ class Trainer:
                 targets = batch["targets"][:, self.target].to(self.device)
                 
                 val_loss = val_loss + self.loss(pred_val, targets)
+
+                self.test_perf.append(self.loss(pred_val, targets).item())
                 
                 del targets
                 del pred_val
 
         return val_loss/(batch_idx+1)
+
+    def plot_data(self):
+        p_data = (self.learning_rate, self.valid_perf, self.test_perf)
+        plot_names = ['Learning curve','Validation loss for every 400 batches', 'Evaluation loss']
+
+        for i in range(3):
+            self.summaries_axes[i].plot(p_data[i])
+            self.summaries_axes[i].set_ylabel('Loss')
+            self.summaries_axes[i].set_xlabel('Batches')
+            self.summaries_axes[i].set_xlim((0, len(self.train_set)))
+            self.summaries_axes[i].set_title(plot_names[i])
+
+        x_ticks = np.arange(0, len(self.train_set), 400)
+        x_ticks_label = [str(val) for val in x_ticks]
+        self.summaries_axes[1].set_xticks(x_ticks)
+        self.summeries_axes[1].set_xticklabels(x_ticks_label)
+
+
+        
