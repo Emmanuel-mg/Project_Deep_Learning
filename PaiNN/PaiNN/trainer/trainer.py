@@ -3,7 +3,8 @@ import numpy as np
 
 from PaiNN.data_loader import PaiNNDataLoader
 from PaiNN.model import PaiNNModel
-   
+from PaiNN.utils import mse
+
 class Trainer:
     """ Responsible for training loop and validation """
     
@@ -18,8 +19,8 @@ class Trainer:
             device: device on which to execute the training
         """
         self.model = model
-        self.loss = loss
         self.target = target
+        self.loss = loss
         self.optimizer = optimizer
 
         self.train_set = data_loader
@@ -32,12 +33,14 @@ class Trainer:
         """
         for batch_idx, batch in enumerate(self.train_set):
             # Using our chosen device
-            batch = batch.to(self.device)
-            targets = batch["y"][self.target]
-
+            batch = batch
+            targets = batch["targets"][:, self.target].to(self.device)
+            print(targets.shape)
             # Backpropagate using the selected loss
-            outputs = self.model(batch)
+            outputs = self.model(batch).to(self.device)
             loss = self.loss(outputs, targets)
+
+            print(f"Current loss {loss} Current batch {batch_idx}")
 
             loss.backward()
             self.optimizer.step()
@@ -49,3 +52,18 @@ class Trainer:
             del loss
             del outputs
             torch.cuda.empty_cache()
+
+if __name__=="__main__":
+    with torch.autograd.set_detect_anomaly(True):
+        train_set = PaiNNDataLoader(r_cut=2, batch_size=32)
+        model = PaiNNModel(r_cut=2)
+        optimizer = torch.optim.Adam(params=model.parameters())
+        trainer = Trainer(
+            model=model,
+            loss=mse,
+            target=0,
+            optimizer=optimizer,
+            data_loader=train_set,
+            device="cpu"
+        )
+        trainer._train_epoch() 

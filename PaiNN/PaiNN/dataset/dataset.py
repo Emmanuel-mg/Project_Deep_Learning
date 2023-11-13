@@ -11,7 +11,7 @@ class PaiNNDataset(Dataset):
         Args:
             path: file path for the dataset
         """
-        self.data = QM9(root = path)[:10]
+        self.data = QM9(root = path)
         self.r_cut = r_cut
         self.self_edge = self_edge
 

@@ -132,10 +132,10 @@ class Message(nn.Module):
         residual_vectors = node_vectors[graph[:, 1]] * residual_vectors.unsqueeze(dim=1)
         # Hadamard product between the direction representations and the sense of the edges
         residual_directions = edges_sense.unsqueeze(dim=-1) * direction_rep.unsqueeze(dim=1)
-        residual_vectors += residual_directions
+        residual_vectors = residual_vectors + residual_directions
 
-        node_scalars += torch.zeros_like(node_scalars).index_add_(0, graph[:, 0], residual_scalars)
-        node_vectors += torch.zeros_like(node_vectors).index_add_(0, graph[:, 0], residual_vectors)
+        node_scalars = node_scalars + torch.zeros_like(node_scalars).index_add_(0, graph[:, 0], residual_scalars)
+        node_vectors = node_vectors + torch.zeros_like(node_vectors).index_add_(0, graph[:, 0], residual_vectors)
 
         return node_scalars, node_vectors
     
@@ -189,8 +189,8 @@ class Update(nn.Module):
         residual_vectors = avv.unsqueeze(dim=1) * Uv
 
         # Updating the representations
-        node_scalars += residual_scalars
-        node_vectors += residual_vectors
+        node_scalars = node_scalars + residual_scalars
+        node_vectors = node_vectors + residual_vectors
 
         return node_scalars, node_vectors
     
