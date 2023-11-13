@@ -6,7 +6,7 @@ from PaiNN.trainer import Trainer
 from PaiNN.utils import mse
 
 def training():
-        train_set = PaiNNDataLoader(r_cut=2, batch_size=32)
+        train_set = PaiNNDataLoader(r_cut=2, batch_size=50)
         model = PaiNNModel(r_cut=2)
         optimizer = torch.optim.Adam(params=model.parameters(), lr = 1e-4, weight_decay=0.01)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5)
