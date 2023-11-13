@@ -100,6 +100,8 @@ class Trainer:
         x_ticks_label = [str(val) for val in x_ticks]
         self.summaries_axes[1].set_xticks(x_ticks)
         self.summeries_axes[1].set_xticklabels(x_ticks_label)
+        plt.savefig('Loss_plot', dpi=800)
+        plt.show()
 
 
         
