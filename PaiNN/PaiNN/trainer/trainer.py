@@ -8,7 +8,7 @@ from PaiNN.utils import mse
 class Trainer:
     """ Responsible for training loop and validation """
     
-    def __init__(self, model: torch.nn.Module, loss: any, target: int, optimizer: torch.optim, data_loader, device: torch.device):
+    def __init__(self, model: torch.nn.Module, loss: any, target: int, optimizer: torch.optim, data_loader, scheduler: torch.optim, device: torch.device):
         """ Constructor
         Args:   
             model: Model to use (usually PaiNN)
@@ -22,6 +22,7 @@ class Trainer:
         self.target = target
         self.loss = loss
         self.optimizer = optimizer
+        self.scheduler = scheduler
 
         self.train_set = data_loader
         self.valid_set = data_loader.get_val()
@@ -33,9 +34,8 @@ class Trainer:
         """
         for batch_idx, batch in enumerate(self.train_set):
             # Using our chosen device
-            batch = batch
             targets = batch["targets"][:, self.target].to(self.device)
-            print(targets.shape)
+
             # Backpropagate using the selected loss
             outputs = self.model(batch).to(self.device)
             loss = self.loss(outputs, targets)
@@ -46,6 +46,13 @@ class Trainer:
             self.optimizer.step()
             self.optimizer.zero_grad()
 
+            if (batch_idx+1)%400 == 0:
+                val_loss = self._eval_model()
+                print(f"Validation loss for {batch_idx} is {val_loss.item()}")
+                self.scheduler.step(val_loss)
+
+                del val_loss
+
             # Cleanup at the end of the batch
             del batch
             del targets
@@ -53,17 +60,17 @@ class Trainer:
             del outputs
             torch.cuda.empty_cache()
 
-if __name__=="__main__":
-    with torch.autograd.set_detect_anomaly(True):
-        train_set = PaiNNDataLoader(r_cut=2, batch_size=32)
-        model = PaiNNModel(r_cut=2)
-        optimizer = torch.optim.Adam(params=model.parameters())
-        trainer = Trainer(
-            model=model,
-            loss=mse,
-            target=0,
-            optimizer=optimizer,
-            data_loader=train_set,
-            device="cpu"
-        )
-        trainer._train_epoch() 
+    def _eval_model(self):
+        val_loss = torch.zeros(1)
+
+        with torch.no_grad():
+            for batch_idx, batch in enumerate(self.valid_set):
+                pred_val = self.model(batch).to(self.device)
+                targets = batch["targets"][:, self.target].to(self.device)
+                
+                val_loss = val_loss + self.loss(pred_val, targets)
+                
+                del targets
+                del pred_val
+
+        return val_loss/(batch_idx+1)

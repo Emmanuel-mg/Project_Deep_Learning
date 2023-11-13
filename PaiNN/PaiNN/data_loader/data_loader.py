@@ -8,7 +8,7 @@ from PaiNN.dataset import PaiNNDataset
 class PaiNNDataLoader(DataLoader):
     """ PaiNNDataLoader to load PaiNN training data """
 
-    def __init__(self, data_path: str = "../data", batch_size: int = 32, r_cut: float = 2., self_edge: bool = False, test_split: float = 0.1, validation_split: float = 0.2, nworkers: int = 2):
+    def __init__(self, data_path: str = "data", batch_size: int = 32, r_cut: float = 2., self_edge: bool = False, test_split: float = 0.1, validation_split: float = 0.2, nworkers: int = 2):
         """ Constructor
         Args:
             train_path: path to the training dataset

@@ -6,7 +6,7 @@ from torch_geometric.datasets import QM9
 class PaiNNDataset(Dataset):
     """ Class for dataset from QM9 data folder """
 
-    def __init__(self, r_cut: float, path: str = "../data", self_edge: bool = False):
+    def __init__(self, r_cut: float, path: str, self_edge: bool = False):
         """ Constructor
         Args:
             path: file path for the dataset
