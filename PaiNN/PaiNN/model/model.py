@@ -8,7 +8,7 @@ from PaiNN.utils import rbf, cos_cut
 class PaiNNModel(nn.Module):
     """ PaiNN model architecture """
 
-    def __init__(self, r_cut: float, n_iterations:int = 4, node_size: int = 128, rbf_size: int = 20):
+    def __init__(self, r_cut: float, n_iterations: int = 3, node_size: int = 128, rbf_size: int = 20):
         """ Constructor
         Args:
             node_size: size of the embedding features
@@ -29,6 +29,13 @@ class PaiNNModel(nn.Module):
         self.message_blocks = [Message(node_size=self.node_size, rbf_size=self.rbf_size, r_cut=self.r_cut) for _ in range(n_iterations)] 
         self.update_blocks = [Update(node_size=self.node_size) for _ in range(n_iterations)]
     
+        self.output_layers = nn.Sequential(
+            nn.Linear(node_size, node_size),
+            nn.SiLU(),
+            nn.Linear(node_size, 1)
+        )
+
+
     def forward(self, input):
         """ Forward pass logic 
         Args:
@@ -61,7 +68,12 @@ class PaiNNModel(nn.Module):
                 node_vectors = node_vectors
             )
 
-        return node_scalars, node_vectors
+        layer_outputs = self.output_layers(node_scalars)
+        outputs = torch.zeros_like(torch.unique(graph_idx)).float().unsqueeze(dim=1)
+
+        outputs.index_add_(0, graph_idx, layer_outputs)
+
+        return outputs
     
 
 class Message(nn.Module):
@@ -188,5 +200,5 @@ if __name__=="__main__":
     val_set = train_set.get_val()
     test_set = train_set.get_test()
     for i, batch in enumerate(train_set):
-        node_scalar, node_vector = model(batch)
-        print(node_scalar.shape, node_vector.shape)
+        output = model(batch)
+        print(output)
