@@ -29,9 +29,9 @@ class Trainer:
         self.valid_set = data_loader.get_val()
         self.test_set = data_loader.get_test()
         self.device = device
-        self.learning_rate = []
+        self.learning_curve = []
         self.valid_perf= []
-        self.test_perf = []
+        self.learning_rates = []
         self.summaries, self.summaries_axes = plt.subplots(1,3, figsize=(10,5))
 
 
@@ -48,7 +48,9 @@ class Trainer:
 
             print(f"Current loss {loss} Current batch {batch_idx}")
 
-            self.learning_rate.append(loss.item())
+            self.learning_curve.append(loss.item())
+            current_lr = self.optimizer.param_groups[0]['lr']
+            self.learning_rates.append(current_lr)
 
             loss.backward()
             self.optimizer.step()
@@ -78,8 +80,6 @@ class Trainer:
                 targets = batch["targets"][:, self.target].to(self.device)
                 
                 val_loss = val_loss + self.loss(pred_val, targets)
-
-                self.test_perf.append(self.loss(pred_val, targets).item())
                 
                 del targets
                 del pred_val
@@ -87,8 +87,8 @@ class Trainer:
         return val_loss/(batch_idx+1)
 
     def plot_data(self):
-        p_data = (self.learning_rate, self.valid_perf, self.test_perf)
-        plot_names = ['Learning curve','Validation loss for every 400 batches', 'Evaluation loss']
+        p_data = (self.learning_curve, self.valid_perf, self.learning_rates)
+        plot_names = ['Learning curve','Validation loss for every 400 batches', 'Learning rates']
 
         for i in range(3):
             self.summaries_axes[i].plot(range(len(p_data[i])), p_data[i])
