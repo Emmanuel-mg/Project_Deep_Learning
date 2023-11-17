@@ -13,7 +13,7 @@ def training():
         )
         model = PaiNNModel(r_cut=5, 
                            device=device
-        )
+        ).to(device)
         optimizer = torch.optim.Adam(params=model.parameters(), lr = 1e-4, weight_decay=0.01)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5)
         trainer = Trainer(
