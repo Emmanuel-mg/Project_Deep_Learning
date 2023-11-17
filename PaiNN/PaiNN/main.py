@@ -14,8 +14,8 @@ def training():
         model = PaiNNModel(r_cut=5, 
                            device=device
         ).to(device)
-        optimizer = torch.optim.Adam(params=model.parameters(), lr = 1e-4, weight_decay=0.01)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5)
+        optimizer = torch.optim.Adam(params=model.parameters(), lr = 1e-3)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience = 5)
         trainer = Trainer(
             model=model,
             loss=mse,
@@ -25,7 +25,7 @@ def training():
             scheduler=scheduler,
             device=device
         )
-        trainer._train(num_epoch = 20)
+        trainer._train(num_epoch = 30)
         trainer.plot_data()
 
 if __name__=="__main__":
