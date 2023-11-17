@@ -87,7 +87,7 @@ class Message(nn.Module):
             rbf_size: number of radial basis functions to use in RBF
             r_cut: radius to cutoff interaction
         """
-        super().__init__()
+        super(Message, self).__init__()
         # Atomwise layers applied to node scalars
         self.atomwise_layers = nn.Sequential(
             nn.Linear(node_size, node_size),
@@ -150,7 +150,7 @@ class Update(nn.Module):
             rbf_size: number of radial basis functions to use in RBF
             r_cut: radius to cutoff interaction
         """
-        super().__init__()
+        super(Update, self).__init__()
         self.node_size = node_size
 
         # U and V matrices 
