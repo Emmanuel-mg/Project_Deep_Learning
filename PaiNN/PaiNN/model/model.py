@@ -8,7 +8,7 @@ from PaiNN.utils import rbf, cos_cut
 class PaiNNModel(nn.Module):
     """ PaiNN model architecture """
 
-    def __init__(self, r_cut: float, n_iterations: int = 3, node_size: int = 128, rbf_size: int = 20):
+    def __init__(self, r_cut: float, n_iterations: int = 3, node_size: int = 128, rbf_size: int = 20, device: torch.device = 'cpu'):
         """ Constructor
         Args:
             node_size: size of the embedding features
@@ -21,6 +21,7 @@ class PaiNNModel(nn.Module):
         self.rbf_size = rbf_size
         num_embedding = 119 # number of all elements in the periodic table
         self.node_size = node_size
+        self.device = device
 
         # Embedding layer for our model
         self.embedding_layer = nn.Embedding(num_embedding, self.node_size)
@@ -41,10 +42,11 @@ class PaiNNModel(nn.Module):
         Args:
             input: dictionnary coming from data_loader
         """
-        graph = input['graph']
-        edges_dist = input['edges_dist']
-        edges_sense = input['normalized']
-        graph_idx = input['graph_idx']
+        # Every input into device
+        graph = input['graph'].to(self.device)
+        edges_dist = input['edges_dist'].to(self.device)
+        edges_sense = input['normalized'].to(self.device)
+        graph_idx = input['graph_idx'].to(self.device)
 
         # Outputs from the atomic numbers
         node_scalars = self.embedding_layer(input['z'])
