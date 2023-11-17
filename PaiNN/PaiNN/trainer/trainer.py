@@ -81,6 +81,7 @@ class Trainer:
         """ Method to train the model
         Args:
             num_epoch: number of epochs you want to train for
+            alpha: exponential smoothing factor
         """
         for epoch in range(num_epoch):
             self._train_epoch()
