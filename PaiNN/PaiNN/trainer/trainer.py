@@ -85,6 +85,14 @@ class Trainer:
 
         return val_loss/(batch_idx+1)
 
+    def _train(self, num_epoch: int = 10):
+        """ Method to train the model
+        Args:
+            num_epoch: number of epochs you want to train for
+        """
+        for _ in range(num_epoch):
+            self._train_epoch()
+        
     def plot_data(self):
         p_data = (self.learning_curve, self.valid_perf, self.learning_rates)
         plot_names = ['Learning curve','Validation loss for every 400 batches', 'Learning rates']
