@@ -9,7 +9,7 @@ from PaiNN.utils import mse
 class Trainer:
     """ Responsible for training loop and validation """
     
-    def __init__(self, model: torch.nn.Module, loss: any, target: int, optimizer: torch.optim, data_loader, scheduler: torch.optim):
+    def __init__(self, model: torch.nn.Module, loss: any, target: int, optimizer: torch.optim, data_loader, scheduler: torch.optim, device: torch.device = "cpu"):
         """ Constructor
         Args:   
             model: Model to use (usually PaiNN)
@@ -24,6 +24,7 @@ class Trainer:
         self.loss = loss
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.device = device
 
         self.train_set = data_loader
         self.valid_set = data_loader.get_val()
