@@ -64,11 +64,11 @@ class Trainer:
             torch.cuda.empty_cache()
 
     def _eval_model(self):
-        val_loss = torch.zeros(1)
+        val_loss = torch.zeros(1).to(self.device)
 
         with torch.no_grad():
             for batch_idx, batch in enumerate(self.valid_set):
-                pred_val = self.model(batch).to(self.device)
+                pred_val = self.model(batch)
                 targets = batch["targets"][:, self.target].to(self.device)
                 
                 val_loss = val_loss + self.loss(pred_val, targets)
