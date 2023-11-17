@@ -47,9 +47,10 @@ class PaiNNModel(nn.Module):
         edges_dist = input['edges_dist'].to(self.device)
         edges_sense = input['normalized'].to(self.device)
         graph_idx = input['graph_idx'].to(self.device)
+        atomic = input['z'].to(self.device)
 
         # Outputs from the atomic numbers
-        node_scalars = self.embedding_layer(input['z'])
+        node_scalars = self.embedding_layer(atomic)
 
         # Initializing the node vector
         node_vectors = torch.zeros((graph_idx.shape[0], 3, self.node_size), 
