@@ -27,8 +27,8 @@ class PaiNNModel(nn.Module):
         self.embedding_layer = nn.Embedding(num_embedding, self.node_size)
 
         # Creating the instances for the iterations of message passing and updating
-        self.message_blocks = [Message(node_size=self.node_size, rbf_size=self.rbf_size, r_cut=self.r_cut) for _ in range(n_iterations)] 
-        self.update_blocks = [Update(node_size=self.node_size) for _ in range(n_iterations)]
+        self.message_blocks = nn.ModuleList([Message(node_size=self.node_size, rbf_size=self.rbf_size, r_cut=self.r_cut) for _ in range(n_iterations)])
+        self.update_blocks = nn.ModuleList([Update(node_size=self.node_size) for _ in range(n_iterations)])
     
         self.output_layers = nn.Sequential(
             nn.Linear(node_size, node_size),
