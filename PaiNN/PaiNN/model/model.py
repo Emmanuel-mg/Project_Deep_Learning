@@ -55,7 +55,7 @@ class PaiNNModel(nn.Module):
         node_vectors = torch.zeros((graph_idx.shape[0], 3, self.node_size), 
                                   device = edges_dist.device, 
                                   dtype = edges_dist.dtype
-                                  )
+                                  ).to(self.device)
         
         for message_block, update_block in zip(self.message_blocks, self.update_blocks):
             node_scalars, node_vectors = message_block(
