@@ -46,7 +46,8 @@ class Trainer:
             outputs = self.model(batch)
             loss = self.loss(outputs, targets)
 
-            print(f"Current loss {loss} Current batch {batch_idx}/{len(self.train_set)}")
+            if batch_idx%100:
+                print(f"Current loss {loss} Current batch {batch_idx}/{len(self.train_set) (100*batch_idx/len(self.train_set)):.2f}%")
 
             self.learning_curve.append(loss.item())
             current_lr = self.optimizer.param_groups[0]['lr']

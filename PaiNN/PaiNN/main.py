@@ -9,7 +9,7 @@ def training():
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"{device} will be used for training the PaiNN model")
         train_set = PaiNNDataLoader(r_cut=5, 
-                                    batch_size=50
+                                    batch_size=100
         )
         model = PaiNNModel(r_cut=5, 
                            device=device
