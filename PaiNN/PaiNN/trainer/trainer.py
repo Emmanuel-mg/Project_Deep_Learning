@@ -45,7 +45,7 @@ class Trainer:
             outputs = self.model(batch)
             loss = self.loss(outputs, targets)
 
-            print(f"Current loss {loss} Current batch {batch_idx}")
+            print(f"Current loss {loss} Current batch {batch_idx}/{len(self.train_set)}")
 
             self.learning_curve.append(loss.item())
             current_lr = self.optimizer.param_groups[0]['lr']
@@ -62,14 +62,6 @@ class Trainer:
             del outputs
             torch.cuda.empty_cache()
 
-        # Validate at the end of an epoch
-        val_loss = self._eval_model()
-        print(f"Validation loss for {batch_idx} is {val_loss.item()}")
-        self.scheduler.step(val_loss)
-        self.valid_perf.append(val_loss.item())
-
-        del val_loss
-
     def _eval_model(self):
         val_loss = torch.zeros(1)
 
@@ -85,14 +77,23 @@ class Trainer:
 
         return val_loss/(batch_idx+1)
 
-    def _train(self, num_epoch: int = 10):
+    def _train(self, num_epoch: int = 10, alpha: float = 0.9):
         """ Method to train the model
         Args:
             num_epoch: number of epochs you want to train for
         """
-        for _ in range(num_epoch):
+        for epoch in range(num_epoch):
             self._train_epoch()
-        
+            # Validate at the end of an epoch
+            val_loss = self._eval_model()
+            print(f"### End of the epoch : Validation loss for {epoch} is {val_loss.item()}")
+            self.scheduler.step(val_loss)
+            val_loss_s = val_loss.item()
+            # Exponential smoothing for validation
+            self.valid_perf.append(val_loss_s if epoch == 0 else alpha*val_loss_s + (1-alpha)*self.valid_perf[-1])
+
+            del val_loss        
+
     def plot_data(self):
         p_data = (self.learning_curve, self.valid_perf, self.learning_rates)
         plot_names = ['Learning curve','Validation loss for every 400 batches', 'Learning rates']
