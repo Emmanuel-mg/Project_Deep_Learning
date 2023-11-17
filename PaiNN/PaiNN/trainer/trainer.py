@@ -46,7 +46,7 @@ class Trainer:
             outputs = self.model(batch)
             loss = self.loss(outputs, targets)
 
-            if batch_idx%100:
+            if batch_idx%100 == 0:
                 print(f"Current loss {loss} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
 
             self.learning_curve.append(loss.item())
