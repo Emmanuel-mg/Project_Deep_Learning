@@ -9,7 +9,7 @@ from PaiNN.utils import mse
 class Trainer:
     """ Responsible for training loop and validation """
     
-    def __init__(self, model: torch.nn.Module, loss: any, target: int, optimizer: torch.optim, data_loader, scheduler: torch.optim, device: torch.device):
+    def __init__(self, model: torch.nn.Module, loss: any, target: int, optimizer: torch.optim, data_loader, scheduler: torch.optim):
         """ Constructor
         Args:   
             model: Model to use (usually PaiNN)
@@ -28,7 +28,6 @@ class Trainer:
         self.train_set = data_loader
         self.valid_set = data_loader.get_val()
         self.test_set = data_loader.get_test()
-        self.device = device
         self.learning_curve = []
         self.valid_perf= []
         self.learning_rates = []
@@ -43,7 +42,7 @@ class Trainer:
             targets = batch["targets"][:, self.target].to(self.device)
 
             # Backpropagate using the selected loss
-            outputs = self.model(batch).to(self.device)
+            outputs = self.model(batch)
             loss = self.loss(outputs, targets)
 
             print(f"Current loss {loss} Current batch {batch_idx}")
