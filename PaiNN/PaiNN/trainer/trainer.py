@@ -55,20 +55,20 @@ class Trainer:
             self.optimizer.step()
             self.optimizer.zero_grad()
 
-            if (batch_idx+1)%400 == 0:
-                val_loss = self._eval_model()
-                print(f"Validation loss for {batch_idx} is {val_loss.item()}")
-                self.scheduler.step(val_loss)
-                self.valid_perf.append(val_loss.item())
-
-                del val_loss
-
             # Cleanup at the end of the batch
             del batch
             del targets
             del loss
             del outputs
             torch.cuda.empty_cache()
+
+        # Validate at the end of an epoch
+        val_loss = self._eval_model()
+        print(f"Validation loss for {batch_idx} is {val_loss.item()}")
+        self.scheduler.step(val_loss)
+        self.valid_perf.append(val_loss.item())
+
+        del val_loss
 
     def _eval_model(self):
         val_loss = torch.zeros(1)

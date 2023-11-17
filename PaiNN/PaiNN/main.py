@@ -18,8 +18,7 @@ def training():
             data_loader=train_set,
             scheduler=scheduler
         )
-        trainer._train_epoch() 
-        trainer.plot_data()
+        trainer._train(num_epoch = 20)
 
 if __name__=="__main__":
     training()
