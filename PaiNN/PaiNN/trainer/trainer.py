@@ -79,12 +79,13 @@ class Trainer:
 
         return val_loss/(batch_idx+1)
 
-    def _train(self, num_epoch: int = 10, alpha: float = 0.9):
+    def _train(self, num_epoch: int = 10, early_stopping: int = 30, alpha: float = 0.9):
         """ Method to train the model
         Args:
             num_epoch: number of epochs you want to train for
             alpha: exponential smoothing factor
         """
+        patience = 0
         for epoch in range(num_epoch):
             self._train_epoch()
             # Validate at the end of an epoch
@@ -94,6 +95,15 @@ class Trainer:
             val_loss_s = val_loss.item()
             # Exponential smoothing for validation
             self.valid_perf.append(val_loss_s if epoch == 0 else alpha*val_loss_s + (1-alpha)*self.valid_perf[-1])
+            
+            if epoch != 0 and min(min_loss, val_loss_s) == min_loss:
+                patience +=1
+                if patience >= early_stopping:
+                    break
+            else:
+                patience = 0
+
+            min_loss = val_loss_s if epoch == 0 else min(min_loss, val_loss_s)
 
             del val_loss        
 
