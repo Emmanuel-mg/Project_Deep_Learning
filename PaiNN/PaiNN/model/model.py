@@ -140,9 +140,6 @@ class Message(nn.Module):
         node_scalars = node_scalars + torch.zeros_like(node_scalars).index_add_(0, graph[:, 0], residual_scalars)
         node_vectors = node_vectors + torch.zeros_like(node_vectors).index_add_(0, graph[:, 0], residual_vectors)
 
-        node_scalars.index_add_(0, graph[:, 0], residual_scalars)
-        node_vectors.index_add_(0, graph[:, 0], residual_vectors)
-        
         return node_scalars, node_vectors
     
 class Update(nn.Module):
