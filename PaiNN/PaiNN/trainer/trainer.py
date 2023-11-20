@@ -70,7 +70,7 @@ class Trainer:
         with torch.no_grad():
             for batch_idx, batch in enumerate(self.valid_set):
                 pred_val = self.model(batch)
-                targets = batch["targets"][:, self.target].to(self.device)
+                targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
                 
                 val_loss = val_loss + self.loss(pred_val, targets)
                 
