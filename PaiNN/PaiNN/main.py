@@ -13,6 +13,7 @@ def training():
                     device=device
                     ).to(device)
         else: 
+            print(f"Let's use {torch.cuda.device_count()} GPUs for training")
             model = torch.nn.DataParallel(PaiNNModel(r_cut=5, 
                 device=device
                 )).to(device)
