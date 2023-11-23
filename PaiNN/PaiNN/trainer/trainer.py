@@ -49,13 +49,15 @@ class Trainer:
             if batch_idx%100 == 0:
                 print(f"Current loss {loss} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
 
-            self.learning_curve.append(loss.item())
-            current_lr = self.optimizer.param_groups[0]['lr']
-            self.learning_rates.append(current_lr)
 
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
+
+            if batch_idx == len(self.train_set) - 1:
+                self.learning_curve.append(loss.item())
+                current_lr = self.optimizer.param_groups[0]['lr']
+                self.learning_rates.append(current_lr)
 
             # Cleanup at the end of the batch
             del batch
@@ -114,7 +116,7 @@ class Trainer:
         for i in range(3):
             self.summaries_axes[i].plot(range(len(p_data[i])), p_data[i])
             self.summaries_axes[i].set_ylabel('Loss')
-            self.summaries_axes[i].set_xlabel('Batches')
+            self.summaries_axes[i].set_xlabel('Epochs')
             self.summaries_axes[i].set_xlim((0, len(p_data[i])))
             self.summaries_axes[i].set_title(plot_names[i])
 
