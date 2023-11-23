@@ -7,17 +7,11 @@ from PaiNN.utils import mse
 
 def training():
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        if torch.cuda.device_count() <= 1:
-            print(f"{device} will be used for training the PaiNN model")
-            model = PaiNNModel(r_cut=5, 
-                    device=device
-                    ).to(device)
-        else: 
-            print(f"Let's use {torch.cuda.device_count()} GPUs for training")
-            model = torch.nn.DataParallel(PaiNNModel(r_cut=5, 
+        print(f"{device} will be used for training the PaiNN model")
+        model = PaiNNModel(r_cut=5, 
                 device=device
-                )).to(device)
-        
+                ).to(device)
+
         train_set = PaiNNDataLoader(r_cut=5, 
                                     batch_size=100
         )
