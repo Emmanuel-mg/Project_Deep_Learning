@@ -6,8 +6,8 @@ from PaiNN.trainer import Trainer
 from PaiNN.utils import mse
 
 def training():
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if torch.cuda.device_count() <= 1:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             print(f"{device} will be used for training the PaiNN model")
             model = PaiNNModel(r_cut=5, 
                     device=device
