@@ -23,3 +23,6 @@ def cos_cut(inputs: torch.Tensor, r_cut: float):
 
 def mse(preds: torch.Tensor, targets: torch.Tensor):
     return torch.mean((preds - targets).square())
+
+def mae(preds: torch.Tensor, targets: torch.Tensor):
+    return torch.mean(torch.abs(preds - targets))
