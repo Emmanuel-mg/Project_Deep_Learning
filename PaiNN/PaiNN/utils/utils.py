@@ -10,7 +10,7 @@ def rbf(inputs: torch.Tensor, r_cut: float, output_size: int = 20):
     # We will apply it between 1 and output size (usually 1 and 20)
     n = torch.arange(1, output_size + 1).to(inputs.device)
 
-    return torch.sin(n * torch.pi * inputs) / (r_cut * inputs)
+    return torch.sin(n * torch.pi * inputs / r_cut) / inputs
 
 def cos_cut(inputs: torch.Tensor, r_cut: float):
     """ Function
