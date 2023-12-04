@@ -40,6 +40,16 @@ class PaiNNDataset(Dataset):
 
         return torch.tensor(edges_coord), torch.tensor(dist).unsqueeze(dim=-1), torch.tensor(normalized)
 
+    def standardize_data(self, train_idx):
+        """ Calculate means and standard deviations
+        """
+        train_set = []
+        for i in train_idx:
+            train_set.append(self.data[i]['y'])
+        train_set = torch.stack(train_set).squeeze(dim=1)
+
+        return torch.mean(train_set, axis=-2), torch.std(train_set, axis=-2)
+    
     def __len__(self):
         """ Return the length of the dataset """
         return len(self.data)

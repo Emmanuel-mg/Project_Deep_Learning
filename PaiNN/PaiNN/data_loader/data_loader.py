@@ -21,8 +21,8 @@ class PaiNNDataLoader(DataLoader):
         """    
         self.r_cut = r_cut
         self.dataset = PaiNNDataset(path = data_path, r_cut = r_cut, self_edge = self_edge)
-        self.length = len(self.dataset)
-        self.train_sampler = SubsetRandomSampler(np.array(range(self.length)))
+        self.train_idx = np.array(range(len(self.dataset)))
+        self.train_sampler = SubsetRandomSampler(self.train_idx)
         self.valid_sampler = None
         self.test_sampler = None
 
@@ -37,6 +37,9 @@ class PaiNNDataLoader(DataLoader):
             'num_workers': nworkers
         }
 
+        # Once you have the final training set calculate means and standard deviations
+        self.mean, self.std = self.dataset.standardize_data(train_idx=self.train_idx.tolist())
+        
         # Return the training dataset
         super().__init__(self.dataset, sampler=self.train_sampler, collate_fn=self.collate_fn, **self.init_kwargs)
 
@@ -63,28 +66,27 @@ class PaiNNDataLoader(DataLoader):
 
         return {'z': torch.cat(batch_dict['z']), 'pos': torch.cat(batch_dict['pos']), 'graph': edges_coord, 'edges_dist': torch.cat(batch_dict['edges_dist']), 'normalized': torch.cat(batch_dict['normalized']), 'graph_idx': ids, 'targets': torch.cat(batch_dict['targets'])}
 
-    def _split(self, validation_split: float):
+    def _split(self, float_split: float):
         """ Creates a sampler to extract training and validation data
         Args:
-            validation_split: decimal for the split of the validation
+            float_split: decimal for creating the split
         """    
-        train_idx = np.array(range(self.length))
-
         # Getting randomly the index of the validation split (we therefore don't need to shuffle)
         split_idx = np.random.choice(
-            train_idx, 
-            int(self.length*validation_split), 
+            range(len(self.train_idx)), 
+            int(len(self.train_idx)*float_split), 
             replace=False
         )
         
         # Deleting the corresponding index in the training set
-        train_idx = np.delete(train_idx, split_idx)
+        split_list = self.train_idx[split_idx]
+        self.train_idx = np.delete(self.train_idx, split_idx)
 
         # Getting the corresponding PyTorch samplers
-        train_sampler = SubsetRandomSampler(train_idx)
+        train_sampler = SubsetRandomSampler(self.train_idx)
         self.train_sampler = train_sampler
 
-        return SubsetRandomSampler(split_idx)
+        return SubsetRandomSampler(split_list)
 
     def get_val(self) -> list:
         """ Return the validation data"""
