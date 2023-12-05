@@ -63,7 +63,7 @@ class Trainer:
                 # De-standardize the data
                 metric = self.metric(outputs*self.std[self.target] + self.mean[self.target], 
                                      targets*self.std[self.target] + self.mean[self.target])
-                print("MAE Training", metric)
+                print("MAE for the training set (last batch)", metric.item())
                 self.learning_curve.append(metric.item())
                 current_lr = self.optimizer.param_groups[0]['lr']
                 self.learning_rates.append(current_lr)
@@ -110,7 +110,7 @@ class Trainer:
             # Tracking MAE in the validation
             self.valid_curve.append(val_metric.item())
             print(f"### End of the epoch : Validation loss for {epoch} is {val_loss.item()}")
-            print(f"MAE for the validation is {val_metric.item()}")
+            print(f"MAE for the validation set is {val_metric.item()}")
 
             # Exponential smoothing for validation
             val_loss_s = val_loss.item()
