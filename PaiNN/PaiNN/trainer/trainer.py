@@ -114,7 +114,7 @@ class Trainer:
 
             # Exponential smoothing for validation
             val_loss_s = val_loss.item()
-            self.valid_loss.append(val_loss_s if epoch == 0 else alpha*val_loss_s + (1-alpha)*self.valid_perf[-1])
+            self.valid_loss.append(val_loss_s if epoch == 0 else alpha*val_loss_s + (1-alpha)*self.valid_loss[-1])
             self.scheduler.step(self.valid_loss[-1])
             
             if epoch != 0 and min(min_loss, val_loss_s) == min_loss:
