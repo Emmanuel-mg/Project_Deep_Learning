@@ -42,6 +42,9 @@ class Trainer:
         """ Training logic for an epoch
         """
         for batch_idx, batch in enumerate(self.train_set):
+
+            mean_loss = torch.zeros(1).to(self.device)
+            mean_mae = torch.zeros(1).to(self.device)
             # Using our chosen device
             targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
             # Standardizing the data
@@ -51,23 +54,24 @@ class Trainer:
             outputs = self.model(batch)
             loss = self.loss(outputs, targets)
 
-            if batch_idx%100 == 0:
-                print(f"Current loss {loss} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
+            # Tracking the results of the epoch
+            mean_loss = mean_loss + loss
+            mean_metric = mean_metric + self.metric(outputs*self.std[self.target] + self.mean[self.target], 
+                                                    targets*self.std[self.target] + self.mean[self.target])
 
+            if batch_idx%100 == 0:
+                print(f"Current loss {mean_loss/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
 
             loss.backward()
             self.optimizer.step()
             self.optimizer.zero_grad()
 
             if batch_idx == len(self.train_set) - 1:
-                # De-standardize the data
-                metric = self.metric(outputs*self.std[self.target] + self.mean[self.target], 
-                                     targets*self.std[self.target] + self.mean[self.target])
                 if self.target not in [0, 1, 5, 11, 16, 17, 18]:
-                    metric = metric * 1000
-                print("MAE for the training set (last batch)", metric.item())
+                    mean_metric = mean_metric * 1000
+                print("MAE for the training set (last batch)", mean_metric.item()/(batch_idx + 1))
 
-                self.learning_curve.append(metric.item())
+                self.learning_curve.append(mean_metric.item()/(batch_idx + 1))
                 current_lr = self.optimizer.param_groups[0]['lr']
                 self.learning_rates.append(current_lr)
 
@@ -96,6 +100,7 @@ class Trainer:
                 del targets
                 del pred_val
 
+        # Convert units if necessary
         if self.target not in [0, 1, 5, 11, 16, 17, 18]:
             val_metric = val_metric * 1000
 
