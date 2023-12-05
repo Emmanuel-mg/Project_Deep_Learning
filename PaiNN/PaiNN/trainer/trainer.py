@@ -27,6 +27,8 @@ class Trainer:
         self.device = device
 
         self.train_set = data_loader
+        self.mean, self.std = self.standardize_data()
+        print(self.mean, self.std, "DONE")
         self.valid_set = data_loader.get_val()
         self.test_set = data_loader.get_test()
         self.learning_curve = []
@@ -108,6 +110,16 @@ class Trainer:
             min_loss = val_loss_s if epoch == 0 else min(min_loss, val_loss_s)
 
             del val_loss        
+
+    def standardize_data(self):
+        """ Calculate means and standard deviations
+        """
+        train_set = []
+        for idx, batch in enumerate(self.train_set):
+            train_set.append(batch['targets'])
+        train_set = torch.cat(train_set).squeeze(dim=1)
+
+        return torch.mean(train_set, axis=-2), torch.std(train_set, axis=-2)
 
     def plot_data(self):
         p_data = (self.learning_curve, self.valid_perf, self.learning_rates)

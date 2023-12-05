@@ -37,9 +37,6 @@ class PaiNNDataLoader(DataLoader):
             'num_workers': nworkers
         }
 
-        # Once you have the final training set calculate means and standard deviations
-        self.mean, self.std = self.dataset.standardize_data(train_idx=self.train_idx.tolist())
-        
         # Return the training dataset
         super().__init__(self.dataset, sampler=self.train_sampler, collate_fn=self.collate_fn, **self.init_kwargs)
 
