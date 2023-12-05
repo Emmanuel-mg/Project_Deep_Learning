@@ -28,7 +28,6 @@ class Trainer:
 
         self.train_set = data_loader
         self.mean, self.std = self.standardize_data()
-        print(self.mean, self.std, "DONE")
         self.valid_set = data_loader.get_val()
         self.test_set = data_loader.get_test()
         self.learning_curve = []
@@ -43,7 +42,10 @@ class Trainer:
         for batch_idx, batch in enumerate(self.train_set):
             # Using our chosen device
             targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
-            print(targets.shape)
+            # Standardizing the data
+            targets = (targets - self.mean[self.target])/self.std[self.target]  
+            print(targets.shape,torch.mean(targets), torch.std(targets))
+
             # Backpropagate using the selected loss
             outputs = self.model(batch)
             loss = self.loss(outputs, targets)
