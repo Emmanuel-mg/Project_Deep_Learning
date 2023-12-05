@@ -43,7 +43,7 @@ class Trainer:
         for batch_idx, batch in enumerate(self.train_set):
             # Using our chosen device
             targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
-
+            print(targets.shape)
             # Backpropagate using the selected loss
             outputs = self.model(batch)
             loss = self.loss(outputs, targets)

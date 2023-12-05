@@ -49,6 +49,11 @@ class PaiNNModel(nn.Module):
         graph_idx = input['graph_idx'].to(self.device)
         atomic = input['z'].to(self.device)
 
+        print("graph",graph.shape)
+        print("edge",edges_dist.shape)
+        print("idx",graph_idx.shape)
+        print("atomic",atomic.shape)
+
         # Outputs from the atomic numbers
         node_scalars = self.embedding_layer(atomic)
 
