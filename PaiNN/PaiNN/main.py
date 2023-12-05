@@ -3,7 +3,7 @@ import torch
 from PaiNN.data_loader import PaiNNDataLoader
 from PaiNN.model import PaiNNModel
 from PaiNN.trainer import Trainer
-from PaiNN.utils import mse
+from PaiNN.utils import mse, mae
 
 def training():
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -20,6 +20,7 @@ def training():
         trainer = Trainer(
             model=model,
             loss=mse,
+            metric=mae,
             target=2,
             optimizer=optimizer,
             data_loader=train_set,
