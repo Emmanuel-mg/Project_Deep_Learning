@@ -31,6 +31,7 @@ class Trainer:
         self.mean, self.std = self.standardize_data()
         self.valid_set = data_loader.get_val()
         self.test_set = data_loader.get_test()
+        self.epoch_swa = 100
         self.learning_curve = []
         self.valid_curve = []
         self.valid_loss = []
@@ -128,17 +129,21 @@ class Trainer:
             # Exponential smoothing for validation
             val_loss_s = val_loss.item()
             self.valid_loss.append(val_loss_s if epoch == 0 else alpha*val_loss_s + (1-alpha)*self.valid_loss[-1])
-            self.scheduler.step(self.valid_loss[-1])
+            # LR scheduler (reduce on plateau)
+            if epoch < self.epoch_swa:
+                self.scheduler.step(self.valid_loss[-1])
             
+
+            # Early stopping
             if epoch != 0 and min(min_loss, val_loss_s) == min_loss:
                 patience +=1
                 if patience >= early_stopping:
                     break
             else:
                 patience = 0
-
             min_loss = val_loss_s if epoch == 0 else min(min_loss, val_loss_s)
 
+            # Cleaning the GPU
             del val_loss        
 
     def standardize_data(self):
