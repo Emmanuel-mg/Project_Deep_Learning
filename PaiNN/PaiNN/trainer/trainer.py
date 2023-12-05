@@ -56,9 +56,10 @@ class Trainer:
 
             # Tracking the results of the epoch
             mean_loss = mean_loss + loss
-            mean_metric = mean_metric + self.metric(outputs*self.std[self.target] + self.mean[self.target], 
+            mean_mae = mean_mae + self.metric(outputs*self.std[self.target] + self.mean[self.target], 
                                                     targets*self.std[self.target] + self.mean[self.target])
 
+            # Tracking loss during training
             if batch_idx%100 == 0:
                 print(f"Current loss {mean_loss/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
 
@@ -66,21 +67,22 @@ class Trainer:
             self.optimizer.step()
             self.optimizer.zero_grad()
 
-            if batch_idx == len(self.train_set) - 1:
-                if self.target not in [0, 1, 5, 11, 16, 17, 18]:
-                    mean_metric = mean_metric * 1000
-                print("MAE for the training set (last batch)", mean_metric.item()/(batch_idx + 1))
-
-                self.learning_curve.append(mean_metric.item()/(batch_idx + 1))
-                current_lr = self.optimizer.param_groups[0]['lr']
-                self.learning_rates.append(current_lr)
-
             # Cleanup at the end of the batch
             del batch
             del targets
             del loss
             del outputs
             torch.cuda.empty_cache()
+        
+        # Printing the result of the epoch 
+        if self.target not in [0, 1, 5, 11, 16, 17, 18]:
+            mean_metric = mean_metric * 1000
+        print("MAE for the training set (last batch)", mean_metric.item()/(batch_idx + 1))
+
+        # Tracking results for plotting
+        self.learning_curve.append(mean_metric.item()/(batch_idx + 1))
+        current_lr = self.optimizer.param_groups[0]['lr']
+        self.learning_rates.append(current_lr)
 
     def _eval_model(self):
         val_loss = torch.zeros(1).to(self.device)
