@@ -63,7 +63,10 @@ class Trainer:
                 # De-standardize the data
                 metric = self.metric(outputs*self.std[self.target] + self.mean[self.target], 
                                      targets*self.std[self.target] + self.mean[self.target])
+                if self.target not in [0, 1, 5, 11, 16, 17, 18]:
+                    metric = metric * 1000
                 print("MAE for the training set (last batch)", metric.item())
+
                 self.learning_curve.append(metric.item())
                 current_lr = self.optimizer.param_groups[0]['lr']
                 self.learning_rates.append(current_lr)
@@ -92,6 +95,9 @@ class Trainer:
                 
                 del targets
                 del pred_val
+
+        if self.target not in [0, 1, 5, 11, 16, 17, 18]:
+            val_metric = val_metric * 1000
 
         return val_loss/(batch_idx+1), val_metric/(batch_idx+1)
 
