@@ -45,7 +45,7 @@ class Trainer:
 
         mean_loss = torch.zeros(1).to(self.device)
         mean_mae = torch.zeros(1).to(self.device)
-        
+
         for batch_idx, batch in enumerate(self.train_set):
 
             # Using our chosen device
@@ -80,7 +80,7 @@ class Trainer:
         # Printing the result of the epoch 
         if self.target not in [0, 1, 5, 11, 16, 17, 18]:
             mean_mae = mean_mae * 1000
-        print("MAE for the training set (last batch)", mean_mae.item()/(batch_idx + 1))
+        print("MAE for the training set", mean_mae.item()/(batch_idx + 1))
 
         # Tracking results for plotting
         self.learning_curve.append(mean_mae.item()/(batch_idx + 1))
