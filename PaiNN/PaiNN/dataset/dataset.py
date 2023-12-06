@@ -1,5 +1,4 @@
 import torch
-import math
 from torch.utils.data import Dataset
 from torch_geometric.datasets import QM9
 
