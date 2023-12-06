@@ -266,8 +266,9 @@ class Trainer:
             self.summaries_axes[i].set_xlim((0, len(p_data[i])))
             self.summaries_axes[i].set_title(plot_names[i])
 
+        plt.tight_layout()
         plt.savefig('Loss_plot.png', dpi=800)
-        plt.show()
+
 
 
         
