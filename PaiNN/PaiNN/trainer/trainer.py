@@ -204,7 +204,7 @@ class Trainer:
             # SWA update if we end a cycle
             if batch_idx % c == 0 and batch_idx != 0:
                 n_models = batch_idx / c
-                current_weights = self.model.get_weights
+                current_weights = self.model.get_weights()
                 # Average the weights and update the model
                 for swa_layer, layer in zip(swa_weights, current_weights):
                     swa_layer = (swa_layer * n_models + layer) / n_models
