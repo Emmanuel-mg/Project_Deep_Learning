@@ -42,10 +42,12 @@ class Trainer:
     def _train_epoch(self) -> dict:
         """ Training logic for an epoch
         """
+
+        mean_loss = torch.zeros(1).to(self.device)
+        mean_mae = torch.zeros(1).to(self.device)
+        
         for batch_idx, batch in enumerate(self.train_set):
 
-            mean_loss = torch.zeros(1).to(self.device)
-            mean_mae = torch.zeros(1).to(self.device)
             # Using our chosen device
             targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
             # Standardizing the data
