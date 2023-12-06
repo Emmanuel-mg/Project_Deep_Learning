@@ -77,11 +77,11 @@ class Trainer:
         
         # Printing the result of the epoch 
         if self.target not in [0, 1, 5, 11, 16, 17, 18]:
-            mean_metric = mean_metric * 1000
-        print("MAE for the training set (last batch)", mean_metric.item()/(batch_idx + 1))
+            mean_mae = mean_mae * 1000
+        print("MAE for the training set (last batch)", mean_mae.item()/(batch_idx + 1))
 
         # Tracking results for plotting
-        self.learning_curve.append(mean_metric.item()/(batch_idx + 1))
+        self.learning_curve.append(mean_mae.item()/(batch_idx + 1))
         current_lr = self.optimizer.param_groups[0]['lr']
         self.learning_rates.append(current_lr)
 
@@ -157,7 +157,7 @@ class Trainer:
         return torch.mean(train_set, axis=-2), torch.std(train_set, axis=-2)
 
     def plot_data(self):
-        p_data = (self.learning_curve, self.valid_perf, self.learning_rates)
+        p_data = (self.learning_curve, self.valid_curve, self.learning_rates)
         plot_names = ['Learning curve','Validation loss for every 400 batches', 'Learning rates']
 
         for i in range(3):

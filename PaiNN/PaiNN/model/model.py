@@ -126,7 +126,7 @@ class Message(nn.Module):
         dist_rep = filter_out * cosine_cutoff
 
         # Getting the Hadamard product by selecting the neighbouring atoms
-        residual = atomwise_rep[graph[:,1]] * dist_rep
+        residual = atomwise_rep[graph[:, 1]] * dist_rep
 
         # Splitting the output
         residual_vectors, residual_scalars, direction_rep = residual.split(128, dim=-1)
@@ -196,12 +196,3 @@ class Update(nn.Module):
         node_vectors = node_vectors + residual_vectors
 
         return node_scalars, node_vectors
-    
-if __name__=="__main__":
-    train_set = PaiNNDataLoader(batch_size=2)
-    model = PaiNNModel(r_cut = getattr(train_set, 'r_cut'))
-    val_set = train_set.get_val()
-    test_set = train_set.get_test()
-    for i, batch in enumerate(train_set):
-        output = model(batch)
-        print(output)
