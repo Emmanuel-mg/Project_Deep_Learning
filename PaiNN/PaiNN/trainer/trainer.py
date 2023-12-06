@@ -121,8 +121,10 @@ class Trainer:
 
             if epoch < epoch_swa:
                 self._train_epoch()
+                last_lr = self.learning_rates[-1]
             else:
-                self._train_epoch_swa(epoch-epoch_swa)               
+                self._train_epoch_swa(alpha_1 = last_lr, alpha_2 = last_lr/10, c = 10)     
+                          
             # Validate at the end of an epoch
             val_loss, val_metric = self._eval_model()
 
