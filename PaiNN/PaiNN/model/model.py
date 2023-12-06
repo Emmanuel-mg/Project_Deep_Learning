@@ -48,7 +48,7 @@ class PaiNNModel(nn.Module):
         edges_sense = input['normalized'].to(self.device)
         graph_idx = input['graph_idx'].to(self.device)
         atomic = input['z'].to(self.device)
-        print("Graph", node_scalars.shape)
+        print("Graph", graph.shape)
         print("Edges dist", edges_dist.shape)
         print("Edges sense", edges_sense.shape)
         print("Graph idx", graph_idx.shape)
