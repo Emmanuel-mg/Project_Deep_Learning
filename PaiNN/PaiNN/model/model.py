@@ -77,7 +77,18 @@ class PaiNNModel(nn.Module):
         outputs.index_add_(0, graph_idx, layer_outputs)
 
         return outputs
-    
+
+    def get_weights(self):
+        """ Return every paramater of the network """
+        parameters = []
+        for param in self.parameters():
+            parameters.append(param.data.detach())
+        return parameters
+
+    def update_weights(self, weights: list):
+        """ Update the weights of the network to the given weights """
+        for layer, update_layer in zip(self.get_weights(), weights):
+            layer.data = update_layer.requires_grad_()
 
 class Message(nn.Module):
     """ Message block from PaiNN paper"""
@@ -196,3 +207,7 @@ class Update(nn.Module):
         node_vectors = node_vectors + residual_vectors
 
         return node_scalars, node_vectors
+    
+if __name__ == "__main__":
+    model = PaiNNModel(r_cut=5)
+    model.store_weights()

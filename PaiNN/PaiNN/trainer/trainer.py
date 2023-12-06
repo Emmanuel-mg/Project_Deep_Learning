@@ -31,18 +31,17 @@ class Trainer:
         self.mean, self.std = self.standardize_data()
         self.valid_set = data_loader.get_val()
         self.test_set = data_loader.get_test()
-        self.epoch_swa = 100
         self.learning_curve = []
         self.valid_curve = []
         self.valid_loss = []
         self.learning_rates = []
+        self.swa_learning_rates = []
         self.summaries, self.summaries_axes = plt.subplots(1,3, figsize=(10,5))
 
 
     def _train_epoch(self) -> dict:
         """ Training logic for an epoch
         """
-
         mean_loss = torch.zeros(1).to(self.device)
         mean_mae = torch.zeros(1).to(self.device)
 
@@ -111,7 +110,7 @@ class Trainer:
 
         return val_loss/(batch_idx+1), val_metric/(batch_idx+1)
 
-    def _train(self, num_epoch: int = 10, early_stopping: int = 30, alpha: float = 0.9):
+    def _train(self, num_epoch: int = 10, epoch_swa: int = 100, early_stopping: int = 0, alpha: float = 0.9):
         """ Method to train the model
         Args:
             num_epoch: number of epochs you want to train for
@@ -119,7 +118,11 @@ class Trainer:
         """
         patience = 0
         for epoch in range(num_epoch):
-            self._train_epoch()
+
+            if epoch < epoch_swa:
+                self._train_epoch()
+            else:
+                self._train_epoch_swa(epoch-epoch_swa)               
             # Validate at the end of an epoch
             val_loss, val_metric = self._eval_model()
 
@@ -131,22 +134,114 @@ class Trainer:
             # Exponential smoothing for validation
             val_loss_s = val_loss.item()
             self.valid_loss.append(val_loss_s if epoch == 0 else alpha*val_loss_s + (1-alpha)*self.valid_loss[-1])
-            # LR scheduler (reduce on plateau)
-            if epoch < self.epoch_swa:
-                self.scheduler.step(self.valid_loss[-1])
             
+            # LR scheduler (reduce on plateau) if not SWA 
+            if epoch < epoch_swa:
+                self.scheduler.step(self.valid_loss[-1])
+            # if SWA has begun the LR scheduler isn't updated anymore
 
-            # Early stopping
-            if epoch != 0 and min(min_loss, val_loss_s) == min_loss:
-                patience +=1
-                if patience >= early_stopping:
-                    break
-            else:
-                patience = 0
-            min_loss = val_loss_s if epoch == 0 else min(min_loss, val_loss_s)
+            # Early stopping (if wanted)
+            if early_stopping!=0:
+                if epoch != 0 and min(min_loss, val_loss_s) == min_loss:
+                    patience +=1
+                    if patience >= early_stopping:
+                        break
+                else:
+                    patience = 0
+                min_loss = val_loss_s if epoch == 0 else min(min_loss, val_loss_s)
 
             # Cleaning the GPU
-            del val_loss        
+            del val_loss      
+
+    def _train_epoch_swa(self, alpha_1: float = 0.005, alpha_2: float = 0.001, c: int = 3) -> dict:
+        """ Training logic for an epoch with Stochastic Weight Averaging    
+        Args:
+            alpha_1: top learning rate of the cycle
+            alpha_2: bottom learning rate of the cycle
+            c: number of learning rates in the cycle
+        """
+        mean_loss = torch.zeros(1).to(self.device)
+        mean_mae = torch.zeros(1).to(self.device)
+
+        swa_weights = self.model.get_weights()
+
+        for batch_idx, batch in enumerate(self.train_set):
+            # Update the learning rate according to the schedule
+            self.optimizer.param_groups[0]['lr'] = alpha_1 * (1 - (batch_idx % c)/(c - 1)) + alpha_2 * (batch_idx % c)/(c - 1)
+            self.swa_learning_rates.append(self.optimizer.param_groups[0]['lr'])
+
+            # Using our chosen device
+            targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
+            # Standardizing the data
+            targets = (targets - self.mean[self.target])/self.std[self.target]  
+
+            # Backpropagate using the selected loss
+            outputs = self.model(batch)
+            loss = self.loss(outputs, targets)
+
+            # Tracking the results of the epoch
+            mean_loss = mean_loss + loss
+            mean_mae = mean_mae + self.metric(outputs*self.std[self.target] + self.mean[self.target], 
+                                                    targets*self.std[self.target] + self.mean[self.target])
+
+            # Tracking loss during training
+            if batch_idx%100 == 0:
+                print(f"Current loss {mean_loss.item()/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
+
+            loss.backward()
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+
+            # Cleanup at the end of the batch
+            del batch
+            del targets
+            del loss
+            del outputs
+            torch.cuda.empty_cache()
+        
+            # SWA update if we end a cycle
+            if batch_idx % c == 0 and batch_idx != 0:
+                n_models = batch_idx / c
+                current_weights = self.model.get_weights
+                # Average the weights and update the model
+                for swa_layer, layer in zip(swa_weights, current_weights):
+                    swa_layer = (swa_layer * n_models + layer) / n_models
+
+        # Printing the result of the epoch 
+        if self.target not in [0, 1, 5, 11, 16, 17, 18]:
+            mean_mae = mean_mae * 1000
+        print("[SWA] MAE for the training set", mean_mae.item()/(batch_idx + 1))
+        print("Taking weight average of SWA as weights")
+        self.model.update_weights(weights = swa_weights)
+
+        # Tracking results for plotting
+        self.learning_curve.append(mean_mae.item()/(batch_idx + 1))
+        current_lr = self.optimizer.param_groups[0]['lr']
+        self.learning_rates.append(current_lr)
+
+    def _eval_model(self):
+        val_loss = torch.zeros(1).to(self.device)
+        val_metric = torch.zeros(1).to(self.device)
+
+        with torch.no_grad():
+            for batch_idx, batch in enumerate(self.valid_set):
+                pred_val = self.model(batch)
+                targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
+                targets = (targets - self.mean[self.target])/self.std[self.target] 
+
+                val_loss = val_loss + self.loss(pred_val, targets)
+                # De-standardize the data
+                val_metric = val_metric + self.metric(pred_val*self.std[self.target] + self.mean[self.target],
+                                                       targets*self.std[self.target] + self.mean[self.target])
+                
+                del targets
+                del pred_val
+
+        # Convert units if necessary
+        if self.target not in [0, 1, 5, 11, 16, 17, 18]:
+            val_metric = val_metric * 1000
+
+        return val_loss/(batch_idx+1), val_metric/(batch_idx+1)  
 
     def standardize_data(self):
         """ Calculate means and standard deviations
