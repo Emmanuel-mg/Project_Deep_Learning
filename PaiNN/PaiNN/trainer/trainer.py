@@ -62,7 +62,7 @@ class Trainer:
 
             # Tracking loss during training
             if batch_idx%100 == 0:
-                print(f"Current loss {mean_loss/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
+                print(f"Current loss {mean_loss.item()/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
 
             loss.backward()
             self.optimizer.step()
