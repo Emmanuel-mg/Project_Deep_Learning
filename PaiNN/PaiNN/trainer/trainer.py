@@ -259,20 +259,13 @@ class Trainer:
     def plot_data(self):
         p_data = (self.learning_curve, self.valid_curve, self.learning_rates)
         plot_names = ['Learning curve','Validation loss for every 400 batches', 'Learning rates']
-
+        x_names = ['MAE', 'MAE', 'LR']
         for i in range(3):
-            if i != 2:
-                self.summaries_axes[i].plot(range(len(p_data[i])), p_data[i])
-                self.summaries_axes[i].set_ylabel('Loss')
-                self.summaries_axes[i].set_xlabel('Epochs')
-                self.summaries_axes[i].set_xlim((0, len(p_data[i])))
-                self.summaries_axes[i].set_title(plot_names[i])
-            else:
-                self.summaries_axes[i].plot(range(len(p_data[i])), p_data[i])
-                self.summaries_axes[i].set_ylabel('Learning rate')
-                self.summaries_axes[i].set_xlabel('Epochs')
-                self.summaries_axes[i].set_xlim((0, len(p_data[i])))
-                self.summaries_axes[i].set_title(plot_names[i])
+            self.summaries_axes[i].plot(range(len(p_data[i])), p_data[i])
+            self.summaries_axes[i].set_ylabel(x_names[i])
+            self.summaries_axes[i].set_xlabel('Epochs')
+            self.summaries_axes[i].set_xlim((0, len(p_data[i])))
+            self.summaries_axes[i].set_title(plot_names[i])
 
         plt.tight_layout()
         plt.savefig('Loss_plot.png', dpi=800)
@@ -282,20 +275,13 @@ class Trainer:
         swa_fig, swa_axs = plt.subplots(1,3, figsize=(10,5))
         swa_data = (loss, metric, lr)
         plot_names = ['Loss SWA','Metric SWA', 'LR SWA']
-
+        x_names = ['MSE', 'MAE', 'LR']
         for i in range(3):
-            if i != 2:
-                swa_axs[i].plot(range(len(swa_data[i][:5*c])), swa_data[i][:5*c])
-                swa_axs[i].set_ylabel('Loss')
-                swa_axs[i].set_xlabel('Batches')
-                swa_axs[i].set_xlim((0, len(swa_data[i][:5*c])))
-                swa_axs[i].set_title(plot_names[i])
-            else:
-                swa_axs[i].plot(range(len(swa_data[i][:5*c])), swa_data[i][:5*c])
-                swa_axs[i].set_ylabel('Learning rate')
-                swa_axs[i].set_xlabel('Batches')
-                swa_axs[i].set_xlim((0, len(swa_data[i][:5*c])))
-                swa_axs[i].set_title(plot_names[i])
+            swa_axs[i].plot(range(len(swa_data[i][:5*c])), swa_data[i][:5*c])
+            swa_axs[i].set_ylabel(x_names[i])
+            swa_axs[i].set_xlabel('Batches')
+            swa_axs[i].set_xlim((0, len(swa_data[i][:5*c])))
+            swa_axs[i].set_title(plot_names[i])
 
         plt.tight_layout()
         plt.savefig('SWA_plot.png', dpi=800)
