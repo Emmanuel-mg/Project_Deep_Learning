@@ -43,7 +43,7 @@ class PaiNNModel(nn.Module):
             input: dictionnary coming from data_loader
         """
         # Every input into device
-        graph = input['graph'].to(self.device)
+        graph = input['graph'].to(self.device).unsqueeze(dim=-1)
         edges_dist = input['edges_dist'].to(self.device)
         edges_sense = input['normalized'].to(self.device)
         graph_idx = input['graph_idx'].to(self.device)
