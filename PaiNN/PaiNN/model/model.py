@@ -123,7 +123,7 @@ class Message(nn.Module):
         cosine_cutoff = cos_cut(edges_dist,
                                 r_cut = self.r_cut
                                 )
-        dist_rep = filter_out * cosine_cutoff
+        dist_rep = filter_out * cosine_cutoff.unsqueeze(dim=-1)
 
         # Getting the Hadamard product by selecting the neighbouring atoms
         residual = atomwise_rep[graph[:, 1]] * dist_rep
@@ -155,8 +155,8 @@ class Update(nn.Module):
         self.node_size = node_size
 
         # U and V matrices 
-        self.U = nn.Linear(node_size, node_size, bias = False)
-        self.V = nn.Linear(node_size, node_size, bias = False)
+        self.U = nn.Linear(node_size, node_size)
+        self.V = nn.Linear(node_size, node_size)
         
         # Atomwise layers applied to node scalars and V projections (stacked)
         self.atomwise_layers = nn.Sequential(
