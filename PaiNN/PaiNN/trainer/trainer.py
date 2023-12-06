@@ -117,7 +117,6 @@ class Trainer:
                 self._train_epoch()
                 last_lr = self.learning_rates[-1]
             else:
-                last_lr = 5e-4
                 self._train_epoch_swa(alpha_1 = last_lr, alpha_2 = last_lr/10, c = 10)     
                           
             # Validate at the end of an epoch
@@ -277,7 +276,8 @@ class Trainer:
 
         plt.tight_layout()
         plt.savefig('Loss_plot.png', dpi=800)
-    
+        plt.close()
+
     def plot_data_swa(self, loss, metric, lr, c):
         swa_fig, swa_axs = plt.subplots(1,3, figsize=(10,5))
         swa_data = (loss, metric, lr)
@@ -299,7 +299,7 @@ class Trainer:
 
         plt.tight_layout()
         plt.savefig('SWA_plot.png', dpi=800)
-
+        plt.close()
 
 
         
