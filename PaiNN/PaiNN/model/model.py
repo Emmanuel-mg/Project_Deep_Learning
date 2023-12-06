@@ -48,16 +48,23 @@ class PaiNNModel(nn.Module):
         edges_sense = input['normalized'].to(self.device)
         graph_idx = input['graph_idx'].to(self.device)
         atomic = input['z'].to(self.device)
+        print("Graph", node_scalars.shape)
+        print("Edges dist", edges_dist.shape)
+        print("Edges sense", edges_sense.shape)
+        print("Graph idx", graph_idx.shape)
+        print("Atomic", atomic.shape)
 
         # Outputs from the atomic numbers
         node_scalars = self.embedding_layer(atomic)
+        print("Node scalars", node_scalars.shape)
 
         # Initializing the node vector
         node_vectors = torch.zeros((graph_idx.shape[0], 3, self.node_size), 
                                   device = edges_dist.device, 
                                   dtype = edges_dist.dtype
                                   ).to(self.device)
-        
+        print("Node vectors", node_vectors.shape)
+
         for message_block, update_block in zip(self.message_blocks, self.update_blocks):
             node_scalars, node_vectors = message_block(
                 node_scalars = node_scalars,
@@ -72,9 +79,11 @@ class PaiNNModel(nn.Module):
             )
 
         layer_outputs = self.output_layers(node_scalars)
+        print("Layer outputs", layer_outputs.shape)
         outputs = torch.zeros_like(torch.unique(graph_idx)).float().unsqueeze(dim=1)
 
         outputs.index_add_(0, graph_idx, layer_outputs)
+        print("Outputs", outputs.shape)
 
         return outputs
     
@@ -113,32 +122,41 @@ class Message(nn.Module):
         """
         # Outputs from scalar representations 
         atomwise_rep = self.atomwise_layers(node_scalars)
+        print("Atomwise", atomwise_rep.shape)
 
         # Outputs from edges distances
         filter_rbf = rbf(edges_dist, 
                           r_cut = self.r_cut,
                           output_size = self.rbf_dim
                           )
+        print("Out RBF", filter_rbf.shape)
         filter_out = self.expand_layer(filter_rbf)
+        print("Out filter RBF", filter_out.shape)
         cosine_cutoff = cos_cut(edges_dist,
                                 r_cut = self.r_cut
                                 )
+        print("Cosine cutoff after unsqueeze", cosine_cutoff.unsqueeze(dim=-1).shape)
         dist_rep = filter_out * cosine_cutoff.unsqueeze(dim=-1)
 
         # Getting the Hadamard product by selecting the neighbouring atoms
         residual = atomwise_rep[graph[:, 1]] * dist_rep
+        print("Residual", residual.shape)
 
         # Splitting the output
         residual_vectors, residual_scalars, direction_rep = residual.split(128, dim=-1)
+        print("SPLITTED", residual_vectors.shape, residual_scalars.shape, residual_vectors.shape)
 
         # Hadamard product with the neighbours vectors representation
         residual_vectors = node_vectors[graph[:, 1]] * residual_vectors.unsqueeze(dim=1)
+        print("Residual vectors", residual_vectors.shape)
         # Hadamard product between the direction representations and the sense of the edges
         residual_directions = edges_sense.unsqueeze(dim=-1) * direction_rep.unsqueeze(dim=1)
+        print("Residual directions", residual_directions.shape)
         residual_vectors = residual_vectors + residual_directions
 
         node_scalars = node_scalars + torch.zeros_like(node_scalars).index_add_(0, graph[:, 0], residual_scalars)
         node_vectors = node_vectors + torch.zeros_like(node_vectors).index_add_(0, graph[:, 0], residual_vectors)
+        print("Node scalars", node_scalars.shape, "Node vectors", node_vectors.shape)
 
         return node_scalars, node_vectors
     
@@ -177,22 +195,30 @@ class Update(nn.Module):
         """
         # Outputs from matrix projection
         Uv = self.U(node_vectors)
+        print("Uv", Uv.shape)
         Vv = self.V(node_vectors)
+        print("Vv", Uv.shape)
 
         # Stacking V projections and node scalars
         node_scalars_Vv = torch.cat((node_scalars, torch.linalg.norm(Vv, dim=1)), dim=1)
+        print("Node scalars vv", node_scalars_Vv.shape)
         a = self.atomwise_layers(node_scalars_Vv)
         avv, asv, ass = a.split(self.node_size, dim=-1)
+        print("Avv ,avs ,ass", avv.shape, asv.shape, ass.shape)
 
         # Scalar product between Uv and Vv
         scalar_product = torch.sum(Uv * Vv, dim=1)
+        print("Scalar product", scalar_product.shape)
 
         # Calculating the residual values for scalars and vectors
         residual_scalars = ass + asv * scalar_product
+        print("Res scalars update", residual_scalars.shape)
         residual_vectors = avv.unsqueeze(dim=1) * Uv
+        print("Res vectors update", residual_vectors.shape)
 
         # Updating the representations
         node_scalars = node_scalars + residual_scalars
         node_vectors = node_vectors + residual_vectors
+        print("Node scalars update", node_scalars.shape, "Node vectors update", node_vectors.shape)
 
         return node_scalars, node_vectors
