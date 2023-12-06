@@ -186,7 +186,7 @@ class Trainer:
             mean_mae = mean_mae + self.metric(outputs*self.std[self.target] + self.mean[self.target], 
                                                     targets*self.std[self.target] + self.mean[self.target])
             swa_metric.append(self.metric(outputs*self.std[self.target] + self.mean[self.target], 
-                                                    targets*self.std[self.target] + self.mean[self.target]))
+                                                    targets*self.std[self.target] + self.mean[self.target]).item())
             # Tracking loss during training
             if batch_idx%100 == 0:
                 print(f"Current loss {mean_loss.item()/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
