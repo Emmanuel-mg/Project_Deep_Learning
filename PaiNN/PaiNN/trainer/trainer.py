@@ -279,23 +279,23 @@ class Trainer:
         plt.savefig('Loss_plot.png', dpi=800)
     
     def plot_data_swa(self, loss, metric, lr, c):
-        swa_fig = plt.subplots(1,3, figsize=(10,5))
+        swa_fig, swa_axs = plt.subplots(1,3, figsize=(10,5))
         swa_data = (loss, metric, lr)
         plot_names = ['Loss SWA','Metric SWA', 'LR SWA']
 
         for i in range(3):
             if i != 2:
-                swa_fig[i].plot(range(len(swa_data[i][:5*c])), swa_data[i][:5*c])
-                swa_fig[i].set_ylabel('Loss')
-                swa_fig[i].set_xlabel('Batches')
-                swa_fig[i].set_xlim((0, len(swa_data[i][:5*c])))
-                swa_fig[i].set_title(plot_names[i])
+                swa_axs[i].plot(range(len(swa_data[i][:5*c])), swa_data[i][:5*c])
+                swa_axs[i].set_ylabel('Loss')
+                swa_axs[i].set_xlabel('Batches')
+                swa_axs[i].set_xlim((0, len(swa_data[i][:5*c])))
+                swa_axs[i].set_title(plot_names[i])
             else:
-                swa_fig[i].plot(range(len(swa_data[i][:5*c])), swa_data[i][:5*c])
-                swa_fig[i].set_ylabel('Learning rate')
-                swa_fig[i].set_xlabel('Batches')
-                swa_fig[i].set_xlim((0, len(swa_data[i][:5*c])))
-                swa_fig[i].set_title(plot_names[i])
+                swa_axs[i].plot(range(len(swa_data[i][:5*c])), swa_data[i][:5*c])
+                swa_axs[i].set_ylabel('Learning rate')
+                swa_axs[i].set_xlabel('Batches')
+                swa_axs[i].set_xlim((0, len(swa_data[i][:5*c])))
+                swa_axs[i].set_title(plot_names[i])
 
         plt.tight_layout()
         plt.savefig('SWA_plot.png', dpi=800)
