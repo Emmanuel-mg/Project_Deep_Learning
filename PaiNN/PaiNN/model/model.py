@@ -43,7 +43,7 @@ class PaiNNModel(nn.Module):
             input: dictionnary coming from data_loader
         """
         # Every input into device
-        graph = input['graph'].to(self.device).unsqueeze(dim=-1)
+        graph = input['graph'].to(self.device)
         edges_dist = input['edges_dist'].to(self.device)
         edges_sense = input['normalized'].to(self.device)
         graph_idx = input['graph_idx'].to(self.device)
@@ -135,8 +135,8 @@ class Message(nn.Module):
         cosine_cutoff = cos_cut(edges_dist,
                                 r_cut = self.r_cut
                                 )
-        print("Cosine cutoff after unsqueeze", cosine_cutoff.unsqueeze(dim=-1).shape)
-        dist_rep = filter_out * cosine_cutoff.unsqueeze(dim=-1)
+        print("Cosine cutoff", cosine_cutoff.shape)
+        dist_rep = filter_out * cosine_cutoff
 
         # Getting the Hadamard product by selecting the neighbouring atoms
         residual = atomwise_rep[graph[:, 1]] * dist_rep
