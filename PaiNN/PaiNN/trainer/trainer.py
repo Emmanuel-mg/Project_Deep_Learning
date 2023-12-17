@@ -84,7 +84,10 @@ class Trainer:
         """ Method to train the model
         Args:
             num_epoch: number of epochs you want to train for
+            epoch_swa: epoch index at which we begin the SWA process
+            early_stopping: if specified patience at which time we stop the training process
             alpha: exponential smoothing factor
+            acyclical : wether we apply cyclical or acyclical SWA
         """
         patience = 0
         swa_step = 0
@@ -207,9 +210,9 @@ class Trainer:
     def _train_epoch_swa_acyclical(self, weights: list, step: int = 1, alpha: float = 0.005) -> dict:
         """ Training logic for an epoch with Stochastic Weight Averaging    
         Args:
-            alpha_1: top learning rate of the cycle
-            alpha_2: bottom learning rate of the cycle
-            c: number of learning rates in the cycle
+            weights: original weights to load at the beginning of each epoch
+            step: number of SWA steps already done (to compute the running average)
+            alpha: learning rate to use during the SWA process
         """
         mean_loss = torch.zeros(1).to(self.device)
         mean_mae = torch.zeros(1).to(self.device)
@@ -271,6 +274,8 @@ class Trainer:
         self.learning_rates.append(current_lr)
 
     def _eval_model(self):
+        """ Evaluating the current model on tbe validation data
+        """
         val_loss = torch.zeros(1).to(self.device)
         val_metric = torch.zeros(1).to(self.device)
 
@@ -305,6 +310,8 @@ class Trainer:
         return torch.mean(train_set, axis=-2), torch.std(train_set, axis=-2)
 
     def plot_data(self):
+        """ Plotting the data from the training process
+        """
         p_data = (self.learning_curve, self.valid_curve, self.learning_rates)
         plot_names = ['Learning curve','Validation loss', 'Learning rates']
         x_names = ['MAE', 'MAE', 'LR']
@@ -320,6 +327,13 @@ class Trainer:
         plt.close()
 
     def plot_data_swa(self, loss, metric, lr, c):
+        """ Plotting the data from a SWA (cyclical) process
+        Args:
+            loss: loss during multiple cycles of the SWA process
+            metric: metric during multiple cycles of the SWA process
+            lr: lr during multiple cycles of the SWA process
+            c: number of cycles to plot
+        """
         swa_fig, swa_axs = plt.subplots(1,3, figsize=(10,5))
         swa_data = (loss, metric, lr)
         plot_names = ['Loss SWA','Metric SWA', 'LR SWA']

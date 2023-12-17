@@ -5,6 +5,7 @@ def rbf(inputs: torch.Tensor, r_cut: float, output_size: int = 20):
     Args:
         inputs: input to which we apply the rbf (usually it will be distances)
         r_cut: the radius at which we cut off
+        output_size: size of the radius based filter
     """
     
     # We will apply it between 1 and output size (usually 1 and 20)
@@ -16,6 +17,7 @@ def cos_cut(inputs: torch.Tensor, r_cut: float):
     """ Function
     Args:
         inputs: inputs on which we will apply Behler-style cosine cutoff
+        r_cut: the radius at which we cut off
     """
 
     # We return the cosine cutoff for inputs smaller than the radius cutoff

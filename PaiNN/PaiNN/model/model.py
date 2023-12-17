@@ -11,7 +11,11 @@ class PaiNNModel(nn.Module):
     def __init__(self, r_cut: float, n_iterations: int = 3, node_size: int = 128, rbf_size: int = 20, device: torch.device = 'cpu'):
         """ Constructor
         Args:
+            r_cut: radius at which we connect two atoms between them (in Angstrum)
+            n_iterations: number of message passing step in the model
             node_size: size of the embedding features
+            rbf_size: size of the radius based filter
+            device: device to use to store the model
         """
         # Instantiate as a module of PyTorch
         super(PaiNNModel, self).__init__()
@@ -86,7 +90,10 @@ class PaiNNModel(nn.Module):
         return parameters
 
     def update_weights(self, weights: list):
-        """ Update the weights of the network to the given weights """
+        """ Update the weights of the network to the given weights
+        Args:
+            weights: weights to assign to the network
+        """
         for layer, update_layer in zip(self.get_weights(), weights):
             layer.data = update_layer.requires_grad_()
 
@@ -159,8 +166,6 @@ class Update(nn.Module):
         """ Constructor
         Args:
             node_size: size to use in the atomwise layers (node_size to 3*node_size)
-            rbf_size: number of radial basis functions to use in RBF
-            r_cut: radius to cutoff interaction
         """
         super(Update, self).__init__()
         self.node_size = node_size
@@ -182,9 +187,6 @@ class Update(nn.Module):
         Args:
             node_scalars: scalar representations of the atoms 
             node_vectors: vector (equivariant) representations of the atoms
-            graph: interactions between atoms (base on r_cut)
-            edges_dist: distances between neighbours
-            r_cut: radius to cutoff interaction
         """
         # Outputs from matrix projection
         Uv = self.U(node_vectors)
@@ -208,6 +210,3 @@ class Update(nn.Module):
 
         return node_scalars, node_vectors
     
-if __name__ == "__main__":
-    model = PaiNNModel(r_cut=5)
-    model.store_weights()

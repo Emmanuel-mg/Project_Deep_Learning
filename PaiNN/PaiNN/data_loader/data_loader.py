@@ -11,12 +11,12 @@ class PaiNNDataLoader(DataLoader):
     def __init__(self, data_path: str = "data", batch_size: int = 50, r_cut: float = 5., self_edge: bool = False, test_split: float = 0.1, validation_split: float = 0.2, nworkers: int = 2):
         """ Constructor
         Args:
-            train_path: path to the training dataset
-            test_path: path to the test dataset(s)
-            batch_size: size of the batch
-            shuffle: shuffles the data 
+            data_path: path to the training dataset
+            batch_size: size of the batch in the dataloader
+            r_cut: radius use to link atoms within the molecul 
+            self_edge: wether or not we connect atoms to themselves
             test_split: decimal for the split of the test (on the entire dataset)
-            validation_split: decimal for the split of the validation (on the training dataset)
+            validation_split: decimal for the split of the validation (on the remaining dataset)
             nworkers: workers for the dataloader class
         """    
         self.r_cut = r_cut
