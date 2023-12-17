@@ -80,30 +80,6 @@ class Trainer:
         current_lr = self.optimizer.param_groups[0]['lr']
         self.learning_rates.append(current_lr)
 
-    def _eval_model(self):
-        val_loss = torch.zeros(1).to(self.device)
-        val_metric = torch.zeros(1).to(self.device)
-
-        with torch.no_grad():
-            for batch_idx, batch in enumerate(self.valid_set):
-                pred_val = self.model(batch)
-                targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
-                targets = (targets - self.mean[self.target])/self.std[self.target] 
-
-                val_loss = val_loss + self.loss(pred_val, targets)
-                # De-standardize the data
-                val_metric = val_metric + self.metric(pred_val*self.std[self.target] + self.mean[self.target],
-                                                       targets*self.std[self.target] + self.mean[self.target])
-                
-                del targets
-                del pred_val
-
-        # Convert units if necessary
-        if self.target not in [0, 1, 5, 11, 16, 17, 18]:
-            val_metric = val_metric * 1000
-
-        return val_loss/(batch_idx+1), val_metric/(batch_idx+1)
-
     def _train(self, num_epoch: int = 10, epoch_swa: int = 100, early_stopping: int = 0, alpha: float = 0.9, acyclical: bool = True):
         """ Method to train the model
         Args:
@@ -245,13 +221,7 @@ class Trainer:
         # Modify current learning rate
         self.optimizer.param_groups[0]['lr'] = alpha
 
-        swa_learning_rates = []
-        swa_loss = []
-        swa_metric = []
-
         for batch_idx, batch in enumerate(self.train_set):
-            # Update the learning rate according to the schedule
-            swa_learning_rates.append(self.optimizer.param_groups[0]['lr'])
 
             # Using our chosen device
             targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
@@ -261,15 +231,12 @@ class Trainer:
             # Backpropagate using the selected loss
             outputs = self.model(batch)
             loss = self.loss(outputs, targets)
-            swa_loss.append(loss.item())
 
             # Tracking the results of the epoch
             mean_loss = mean_loss + loss
             
             mean_mae = mean_mae + self.metric(outputs*self.std[self.target] + self.mean[self.target], 
                                                     targets*self.std[self.target] + self.mean[self.target])
-            swa_metric.append(self.metric(outputs*self.std[self.target] + self.mean[self.target], 
-                                                    targets*self.std[self.target] + self.mean[self.target]).item())
             # Tracking loss during training
             if batch_idx%100 == 0:
                 print(f"Current loss {mean_loss.item()/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
@@ -297,7 +264,6 @@ class Trainer:
         print("[SWA] MAE for the training set", mean_mae.item()/(batch_idx + 1))
         print("Taking weight average of SWA as weights")
         self.model.update_weights(weights = swa_weights)
-        self.plot_data_swa(swa_loss, swa_metric, swa_learning_rates, c)
 
         # Tracking results for plotting
         self.learning_curve.append(mean_mae.item()/(batch_idx + 1))
