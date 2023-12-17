@@ -313,7 +313,7 @@ class Trainer:
         """ Plotting the data from the training process
         """
         p_data = (self.learning_curve, self.valid_curve, self.learning_rates)
-        plot_names = ['Learning curve','Validation loss', 'Learning rates']
+        plot_names = ['Training metric','Validation metric', 'Learning rate']
         x_names = ['MAE', 'MAE', 'LR']
         for i in range(3):
             self.summaries_axes[i].plot(range(len(p_data[i])), p_data[i])
