@@ -104,21 +104,27 @@ class Trainer:
 
         return val_loss/(batch_idx+1), val_metric/(batch_idx+1)
 
-    def _train(self, num_epoch: int = 10, epoch_swa: int = 100, early_stopping: int = 0, alpha: float = 0.9):
+    def _train(self, num_epoch: int = 10, epoch_swa: int = 100, early_stopping: int = 0, alpha: float = 0.9, acyclical: bool = True):
         """ Method to train the model
         Args:
             num_epoch: number of epochs you want to train for
             alpha: exponential smoothing factor
         """
         patience = 0
+        swa_step = 0
         for epoch in range(num_epoch):
 
             if epoch < epoch_swa:
                 self._train_epoch()
                 last_lr = self.learning_rates[-1]
+                last_weights = self.model.get_weights()
             else:
-                self._train_epoch_swa(alpha_1 = last_lr, alpha_2 = last_lr/10, c = 10)     
-                          
+                if acyclical:
+                    swa_step += 1
+                    self._train_epoch_swa_acyclical(weights = last_weights, step = swa_step, alpha = last_lr*10)     
+                else:    
+                    self._train_epoch_swa(alpha_1 = last_lr, alpha_2 = last_lr*10, c = 100)     
+
             # Validate at the end of an epoch
             val_loss, val_metric = self._eval_model()
 
@@ -208,6 +214,82 @@ class Trainer:
                 # Average the weights and update the model
                 for swa_layer, layer in zip(swa_weights, current_weights):
                     swa_layer = (swa_layer * n_models + layer) / n_models
+
+        # Printing the result of the epoch 
+        if self.target not in [0, 1, 5, 11, 16, 17, 18]:
+            mean_mae = mean_mae * 1000
+        print("[SWA] MAE for the training set", mean_mae.item()/(batch_idx + 1))
+        print("Taking weight average of SWA as weights")
+        self.model.update_weights(weights = swa_weights)
+        self.plot_data_swa(swa_loss, swa_metric, swa_learning_rates, c)
+
+        # Tracking results for plotting
+        self.learning_curve.append(mean_mae.item()/(batch_idx + 1))
+        current_lr = self.optimizer.param_groups[0]['lr']
+        self.learning_rates.append(current_lr)
+
+    def _train_epoch_swa_acyclical(self, weights: list, step: int = 1, alpha: float = 0.005) -> dict:
+        """ Training logic for an epoch with Stochastic Weight Averaging    
+        Args:
+            alpha_1: top learning rate of the cycle
+            alpha_2: bottom learning rate of the cycle
+            c: number of learning rates in the cycle
+        """
+        mean_loss = torch.zeros(1).to(self.device)
+        mean_mae = torch.zeros(1).to(self.device)
+
+        # Store previous weights as swa weights
+        swa_weights = self.model.get_weights()
+        # Reinitialize the network to initial weights
+        self.model.update_weights(weights = weights)
+        # Modify current learning rate
+        self.optimizer.param_groups[0]['lr'] = alpha
+
+        swa_learning_rates = []
+        swa_loss = []
+        swa_metric = []
+
+        for batch_idx, batch in enumerate(self.train_set):
+            # Update the learning rate according to the schedule
+            swa_learning_rates.append(self.optimizer.param_groups[0]['lr'])
+
+            # Using our chosen device
+            targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
+            # Standardizing the data
+            targets = (targets - self.mean[self.target])/self.std[self.target]  
+
+            # Backpropagate using the selected loss
+            outputs = self.model(batch)
+            loss = self.loss(outputs, targets)
+            swa_loss.append(loss.item())
+
+            # Tracking the results of the epoch
+            mean_loss = mean_loss + loss
+            
+            mean_mae = mean_mae + self.metric(outputs*self.std[self.target] + self.mean[self.target], 
+                                                    targets*self.std[self.target] + self.mean[self.target])
+            swa_metric.append(self.metric(outputs*self.std[self.target] + self.mean[self.target], 
+                                                    targets*self.std[self.target] + self.mean[self.target]).item())
+            # Tracking loss during training
+            if batch_idx%100 == 0:
+                print(f"Current loss {mean_loss.item()/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
+
+            loss.backward()
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+
+            # Cleanup at the end of the batch
+            del batch
+            del targets
+            del loss
+            del outputs
+            torch.cuda.empty_cache()
+        
+        # SWA update if we end an epoch
+        current_weights = self.model.get_weights()
+        # Average the weights and update the model
+        for swa_layer, layer in zip(swa_weights, current_weights):
+            swa_layer = (swa_layer * step + layer) / step
 
         # Printing the result of the epoch 
         if self.target not in [0, 1, 5, 11, 16, 17, 18]:

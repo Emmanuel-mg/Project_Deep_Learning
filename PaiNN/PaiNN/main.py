@@ -27,7 +27,7 @@ def training():
             scheduler=scheduler,
             device=device
         )
-        trainer._train(num_epoch = 140, epoch_swa = 100)
+        trainer._train(num_epoch = 200, epoch_swa = 100)
         trainer.plot_data()
 
 if __name__=="__main__":
