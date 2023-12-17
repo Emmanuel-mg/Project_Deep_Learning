@@ -306,7 +306,7 @@ class Trainer:
 
     def plot_data(self):
         p_data = (self.learning_curve, self.valid_curve, self.learning_rates)
-        plot_names = ['Learning curve','Validation loss for every 400 batches', 'Learning rates']
+        plot_names = ['Learning curve','Validation loss', 'Learning rates']
         x_names = ['MAE', 'MAE', 'LR']
         for i in range(3):
             self.summaries_axes[i].plot(range(len(p_data[i])), p_data[i])
