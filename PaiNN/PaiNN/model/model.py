@@ -170,9 +170,9 @@ class Update(nn.Module):
         super(Update, self).__init__()
         self.node_size = node_size
 
-        # U and V matrices 
-        self.U = nn.Linear(node_size, node_size)
-        self.V = nn.Linear(node_size, node_size)
+        # U and V matrices (no bias for rotational invariance)
+        self.U = nn.Linear(node_size, node_size, bias=False)
+        self.V = nn.Linear(node_size, node_size, bias=False)
         
         # Atomwise layers applied to node scalars and V projections (stacked)
         self.atomwise_layers = nn.Sequential(
