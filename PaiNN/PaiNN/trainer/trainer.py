@@ -100,9 +100,9 @@ class Trainer:
             else:
                 if acyclical:
                     swa_step += 1
-                    self._train_epoch_swa_acyclical(weights = last_weights, step = swa_step, alpha = last_lr*10)     
+                    self._train_epoch_swa_acyclical(weights = last_weights, step = swa_step, alpha = last_lr)     
                 else:    
-                    self._train_epoch_swa(alpha_1 = last_lr, alpha_2 = last_lr*10, c = 100)     
+                    self._train_epoch_swa(alpha_1 = last_lr*10, alpha_2 = last_lr, c = 100)     
 
             # Validate at the end of an epoch
             val_loss, val_metric = self._eval_model()
