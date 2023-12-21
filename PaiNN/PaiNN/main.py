@@ -23,10 +23,9 @@ def training(n_iterations, train_set):
             optimizer = optimizer,
             data_loader = train_set,
             scheduler = scheduler,
-            device = device,
-            gaussian = True
+            device = device
         )
-        trainer._train(num_epoch = 3, epoch_swa = 1)
+        trainer._train(num_epoch = 3, epoch_swa = 1, gaussian = True)
         trainer.plot_data()
 
 if __name__=="__main__":

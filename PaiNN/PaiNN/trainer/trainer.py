@@ -138,8 +138,8 @@ class Trainer:
                     swa_epoch += 1
                     # Evaluate the SWAG procedure at the end of an epoch
                     val_loss, val_metric = self._eval_swag_model(sample = 30, 
-                                                                swa_weights = swa_weights,
-                                                                swa_squared = swa_squared,
+                                                                weights = swa_weights,
+                                                                squared = swa_squared,
                                                                 deviation = deviation,
                                                                 rank = 40)
 
