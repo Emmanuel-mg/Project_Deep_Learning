@@ -43,3 +43,6 @@ python3 -u Project_Deep_Learning/PaiNN/PaiNN/main.py
 ## Jupyter notebook 
 We propose a Jupyter notebook that you can run on Colab to train a PaiNN model directly online, it only install the needed packages and run the main.py program, it can be useful to reproduce the results of this project nevertheless we advise to use a cluster to train the PaiNN model as it usually takes around 12h to perform 100 epochs on the QM9 dataset.
 
+This is the kind of loss plot you could expect at the end of your training
+
+![Training curves during training](pictures/loss_plot.png)
