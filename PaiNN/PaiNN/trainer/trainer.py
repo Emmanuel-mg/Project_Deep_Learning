@@ -378,6 +378,7 @@ class Trainer:
             weights: current estimate of the SWA weights (1st moment)
             squared: current estimate of the SWA covariance (2nd moment)
             deviation: current estimate of the deviation matrix (with low rank estimation)
+            rank: rank for the low rank estimation of the deviation matrix
         """
         val_loss = torch.zeros(1).to(self.device)
         val_metric = torch.zeros(1).to(self.device)
