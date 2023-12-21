@@ -80,19 +80,19 @@ class Trainer:
         current_lr = self.optimizer.param_groups[0]['lr']
         self.learning_rates.append(current_lr)
 
-    def _train(self, num_epoch: int = 10, epoch_swa: int = 100, early_stopping: int = 0, alpha: float = 0.9, acyclical: bool = True):
+    def _train(self, num_epoch: int = 100, epoch_swa: int = 100, early_stopping: int = 0, alpha: float = 0.9, acyclical: bool = True):
         """ Method to train the model
         Args:
             num_epoch: number of epochs you want to train for
             epoch_swa: epoch index at which we begin the SWA process
             early_stopping: if specified patience at which time we stop the training process
-            alpha: exponential smoothing factor
+            alpha: exponential smoothing factor for the validation loss (influence on patience)
             acyclical : wether we apply cyclical or acyclical SWA
         """
         patience = 0
         swa_step = 0
         for epoch in range(num_epoch):
-
+            # Test wether or not we should apply SWA procedure
             if epoch < epoch_swa:
                 self._train_epoch()
                 last_lr = self.learning_rates[-1]
@@ -104,7 +104,7 @@ class Trainer:
                 else:    
                     self._train_epoch_swa(alpha_1 = last_lr*10, alpha_2 = last_lr, c = 100)     
 
-            # Validate at the end of an epoch
+            # Validate at the end of an epoch (SWA or not SWA)
             val_loss, val_metric = self._eval_model()
 
             # Tracking MAE in the validation
@@ -112,16 +112,16 @@ class Trainer:
             print(f"### End of the epoch : Validation loss for {epoch} is {val_loss.item()}")
             print(f"MAE for the validation set is {val_metric.item()}")
 
-            # Exponential smoothing for validation
+            # Exponential smoothing for validation (factor defined by the user)
             val_loss_s = val_loss.item()
             self.valid_loss.append(val_loss_s if epoch == 0 else alpha*val_loss_s + (1-alpha)*self.valid_loss[-1])
             
-            # LR scheduler (reduce on plateau) if not SWA 
+            # LR scheduler (reduce on plateau as a baseline) if not SWA 
             if epoch < epoch_swa:
                 self.scheduler.step(self.valid_loss[-1])
-            # if SWA has begun the LR scheduler isn't updated anymore
+            # if SWA has begun the LR scheduler isn't updated anymore instead we handle it in the SWA procedure
 
-            # Early stopping (if wanted)
+            # Early stopping (if defined )
             if early_stopping!=0:
                 if epoch != 0 and min(min_loss, val_loss_s) == min_loss:
                     patience +=1
@@ -135,7 +135,7 @@ class Trainer:
             del val_loss      
 
     def _train_epoch_swa(self, alpha_1: float = 0.005, alpha_2: float = 0.001, c: int = 3) -> dict:
-        """ Training logic for an epoch with Stochastic Weight Averaging    
+        """ Training logic for an epoch with Stochastic Weight Averaging with cycles over batches 
         Args:
             alpha_1: top learning rate of the cycle
             alpha_2: bottom learning rate of the cycle
@@ -208,7 +208,7 @@ class Trainer:
         self.learning_rates.append(current_lr)
 
     def _train_epoch_swa_acyclical(self, weights: list, step: int = 1, alpha: float = 0.005) -> dict:
-        """ Training logic for an epoch with Stochastic Weight Averaging    
+        """ Training logic for an epoch with Stochastic Weight Averaging with one cycle per epoch 
         Args:
             weights: original weights to load at the beginning of each epoch
             step: number of SWA steps already done (to compute the running average)
