@@ -103,7 +103,7 @@ class Trainer:
                 current_weights, swa_weights = self._train_epoch_swa(epoch = swa_epoch,
                                                                     weights = current_weights, 
                                                                     swa_weights = swa_weights,
-                                                                    alpha_1 = last_lr*10, 
+                                                                    alpha_1 = last_lr, 
                                                                     alpha_2 = last_lr, 
                                                                     c = 100)     
                 swa_epoch += 1
@@ -140,7 +140,7 @@ class Trainer:
             # Cleaning the GPU
             del val_loss      
 
-    def _train_epoch_swa(self, epoch: int, weights: list, swa_weights: list, alpha_1: float = 0.005, alpha_2: float = 0.001, c: int = 3) -> dict:
+    def _train_epoch_swa(self, epoch: int, weights: list, swa_weights: list, alpha_1: float = 0.005, alpha_2: float = 0.001, c: int = 100) -> dict:
         """ Training logic for an epoch with Stochastic Weight Averaging
         Args:
             epoch: number of epoch we are doing the SWA process (change the number of steps)
