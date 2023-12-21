@@ -1,5 +1,5 @@
 import torch
-from torch.distributions.multivariate_normal import LowRankMultivariateNormal
+from torch.distributions.lowrank_multivariate_normal import LowRankMultivariateNormal
 import math
 import matplotlib.pyplot as plt
 
