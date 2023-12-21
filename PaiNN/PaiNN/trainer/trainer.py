@@ -328,6 +328,7 @@ class Trainer:
                         del deviation_layer[0]
                         deviation_layer.append(layer - swa_layer)
                     else:
+                        print("Added to deviation")
                         deviation_layer.append(layer - swa_layer)
 
         # Printing the result of the epoch 
@@ -392,7 +393,7 @@ class Trainer:
             loc = torch.cat(loc, layer.flatten())
             sigma_diag = torch.cat(sigma_diag, layer_squared)
             deviation = torch.cat(deviation, torch.stack(layer_deviation).flatten(start_dim=1))
-
+        print(deviation.shape)
         sigma_diag = torch.diag(sigma_diag)
         sigma_lowrank = deviation.T / (math.sqrt(rank - 1))
 
