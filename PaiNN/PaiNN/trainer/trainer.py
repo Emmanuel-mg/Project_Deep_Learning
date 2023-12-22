@@ -32,7 +32,7 @@ class Trainer:
         self.valid_curve = []
         self.valid_loss = []
         self.learning_rates = []
-        self.summaries, self.summaries_axes = plt.subplots(1,3, figsize=(10,5))
+        self.summaries, self.summaries_axes = plt.subplots(1, 3, figsize = (10,5))
 
 
     def _train_epoch(self) -> dict:
@@ -44,7 +44,7 @@ class Trainer:
         for batch_idx, batch in enumerate(self.train_set):
 
             # Using our chosen device
-            targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim=-1)
+            targets = batch["targets"][:, self.target].to(self.device).unsqueeze(dim = -1)
             # Standardizing the data
             targets = (targets - self.mean[self.target])/self.std[self.target]  
 
@@ -54,12 +54,12 @@ class Trainer:
 
             # Tracking the results of the epoch
             mean_loss = mean_loss + loss
-            mean_mae = mean_mae + self.metric(outputs*self.std[self.target] + self.mean[self.target], 
-                                                    targets*self.std[self.target] + self.mean[self.target])
+            mean_mae = mean_mae + self.metric(outputs * self.std[self.target] + self.mean[self.target], 
+                                                    targets * self.std[self.target] + self.mean[self.target])
 
             # Tracking loss during training
             if batch_idx%100 == 0:
-                print(f"Current loss {mean_loss.item()/(batch_idx+1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
+                print(f"Current loss {mean_loss.item()/(batch_idx + 1)} Current batch {batch_idx}/{len(self.train_set)} ({100*batch_idx/len(self.train_set):.2f}%)")
 
             loss.backward()
             self.optimizer.step()
@@ -160,7 +160,7 @@ class Trainer:
             # Early stopping (if defined )
             if early_stopping!=0:
                 if epoch != 0 and min(min_loss, val_loss_s) == min_loss:
-                    patience +=1
+                    patience += 1
                     if patience >= early_stopping:
                         break
                 else:
@@ -170,7 +170,7 @@ class Trainer:
             # Cleaning the GPU
             del val_loss      
 
-    def _train_epoch_swa(self, epoch: int, weights: list, swa_weights: list, alpha_1: float = 0.005, alpha_2: float = 0.001, c: int = 100) -> dict:
+    def _train_epoch_swa(self, epoch: int, weights: list, swa_weights: list, alpha_1: float = 0.005, alpha_2: float = 0.001, c: int = 100):
         """ Training logic for an epoch with Stochastic Weight Averaging
         Args:
             epoch: number of epoch we are doing the SWA process (change the number of steps)
@@ -250,9 +250,9 @@ class Trainer:
         current_lr = self.optimizer.param_groups[0]['lr']
         self.learning_rates.append(current_lr)
 
-        return swa_weights, current_weights
+        return current_weights, swa_weights
 
-    def _train_epoch_swag(self, epoch: int, weights: list, swa_weights: list, swa_squared: list, deviation: list, alpha_1: float = 0.005, alpha_2: float = 0.001, c: int = 100, rank: int = 20) -> dict:
+    def _train_epoch_swag(self, epoch: int, weights: list, swa_weights: list, swa_squared: list, deviation: list, alpha_1: float = 0.005, alpha_2: float = 0.001, c: int = 100, rank: int = 20):
         """ Training logic for an epoch with Stochastic Weight Averaging-Gaussian
         Args:
             epoch: number of epoch we are doing the SWA process (change the number of steps)
@@ -317,7 +317,7 @@ class Trainer:
                 # We need to average over all the epochs we previously did
                 n_models = epoch * (len(self.train_set) // c) + (batch_idx + 1) / c
                 current_weights = self.model.get_weights()
-                # Storiong the moments and deviation of the model
+                # Storing the moments and deviation of the model
                 for swa_layer, swa_squared_layer, deviation_layer, layer in zip(swa_weights, swa_squared, deviation, current_weights):
                     # Storing first moment
                     swa_layer = (swa_layer * n_models + layer) / (n_models + 1)
@@ -328,7 +328,6 @@ class Trainer:
                         del deviation_layer[0]
                         deviation_layer.append(layer - swa_layer)
                     else:
-                        print("Added to deviation")
                         deviation_layer.append(layer - swa_layer)
 
         # Printing the result of the epoch 
@@ -343,7 +342,7 @@ class Trainer:
         current_lr = self.optimizer.param_groups[0]['lr']
         self.learning_rates.append(current_lr)
 
-        return swa_weights, current_weights, swa_squared, deviation
+        return current_weights, swa_weights, swa_squared, deviation
 
     @torch.no_grad()
     def _eval_model(self):
@@ -385,17 +384,17 @@ class Trainer:
         val_metric = torch.zeros(1).to(self.device)
 
         # We need to build the distribution of weights and then store them back as correct weights
-        loc, sigma_diag, deviation = torch.tensor([]), torch.tensor([]), torch.tensor([])
+        loc, sigma_diag, deviation_matrix = torch.tensor([]).to(self.device), torch.tensor([]).to(self.device), torch.tensor([]).to(self.device)
         shapes, params_count = [], []
         for layer, layer_squared, layer_deviation in zip(weights, squared, deviation):
             shapes.append(layer.shape)
             params_count.append(layer.numel())
-            loc = torch.cat(loc, layer.flatten())
-            sigma_diag = torch.cat(sigma_diag, layer_squared)
-            deviation = torch.cat(deviation, torch.stack(layer_deviation).flatten(start_dim=1))
-        print(deviation.shape)
+            loc = torch.cat([loc, layer.flatten()])
+            sigma_diag = torch.cat([sigma_diag, layer_squared.flatten()])
+            deviation_matrix = torch.cat([deviation_matrix, torch.stack(layer_deviation).flatten(start_dim=1)], dim= 1 )
+
         sigma_diag = torch.diag(sigma_diag)
-        sigma_lowrank = deviation.T / (math.sqrt(rank - 1))
+        sigma_lowrank = deviation_matrix.T / (math.sqrt(rank - 1))
 
         weight_distribution = LowRankMultivariateNormal(loc, 0.5 * sigma_lowrank, 0.5 * sigma_diag)
 
