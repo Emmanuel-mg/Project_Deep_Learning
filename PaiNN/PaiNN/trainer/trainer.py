@@ -393,7 +393,6 @@ class Trainer:
             sigma_diag = torch.cat([sigma_diag, layer_squared.flatten()])
             deviation_matrix = torch.cat([deviation_matrix, torch.stack(layer_deviation).flatten(start_dim=1)], dim= 1 )
 
-        sigma_diag = torch.diag(sigma_diag)
         sigma_lowrank = deviation_matrix.T / (math.sqrt(rank - 1))
 
         weight_distribution = LowRankMultivariateNormal(loc, 0.5 * sigma_lowrank, 0.5 * sigma_diag)
@@ -403,8 +402,8 @@ class Trainer:
             weight_input = []
             slide = 0
             for shape, num in zip(shapes, params_count):
-                weight_input.append(weight_sample[slide:num].reshape(shape))
-                slide = num
+                weight_input.append(weight_sample[slide : slide + num].reshape(shape))
+                slide += num
             del weight_sample
 
             # Loading the sampled wieghts
